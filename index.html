@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistem Manajemen PP Nurul Islam Al-Munawwir</title>
+    <style>
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #f4f6f9; 
+            margin: 0; 
+            padding: 10px; 
+            font-size: 14px; 
+        }
+        
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+        }
+
+        .header-area {
+            position: relative;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        h2 { font-size: 18px; color: #1e3799; margin: 0; }
+        .status-badge { 
+            display: block; width: fit-content; margin: 5px auto 10px auto; 
+            background: #1e3799; color: white; padding: 4px 10px; 
+            border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase;
+        }
+
+        .btn-sync-global {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+            padding: 5px 10px;
+            font-size: 11px;
+            background: #28a745;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        /* TABS COMPACT */
+        .tabs { display: flex; gap: 4px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { 
+            flex: 1; min-width: 80px; padding: 8px 5px; border: none; 
+            background: #e9ecef; border-radius: 6px; cursor: pointer; 
+            font-weight: bold; font-size: 11px; text-align: center; white-space: nowrap;
+        }
+        .tab-btn.active { background: #1e3799; color: white; }
+        .panel { display: none; }
+        .panel.active { display: block; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* FORM ELEMENTS COMPACT */
+        .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        label { font-weight: bold; font-size: 11px; color: #495057; margin-bottom: 2px; }
+        select, input, textarea { 
+            padding: 8px; border: 1px solid #ced4da; border-radius: 4px; 
+            font-size: 13px; width: 100%; background: white; 
+        }
+        
+        button { 
+            padding: 10px; border: none; border-radius: 4px; cursor: pointer; 
+            font-weight: bold; font-size: 13px; width: 100%; text-align: center; 
+        }
+        .btn-primary { background: #1e3799; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
+
+        /* SEARCH BOX */
+        .search-box { position: relative; margin-bottom: 10px; }
+        .search-box input { padding-left: 30px; font-size: 12px; height: 36px; }
+
+        /* LIST ABSENSI MINIMALIS */
+        .absen-list-container { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+        .absen-item { background: #fff; border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; }
+        .absen-header { padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        .absen-header:hover { background: #f8f9fa; }
+        .absen-header.active { background: #ebf5fb; border-bottom: 1px solid #dee2e6; }
+        .absen-nama-text { font-weight: bold; font-size: 14px; color: #2c3e50; }
+        .absen-status-indicator { font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 10px; background: #e9ecef; color: #6c757d; }
+        .absen-status-indicator.hadir { background: #d4edda; color: #155724; }
+        .absen-status-indicator.alpa { background: #f8d7da; color: #721c24; }
+        .absen-status-indicator.telat { background: #ffeaa7; color: #d35400; }
+        .absen-status-indicator.izin { background: #d1ecf1; color: #0c5460; }
+        .absen-status-indicator.sakit { background: #fff3cd; color: #856404; }
+        .absen-status-indicator.keluar { background: #e2d9f3; color: #4a2c82; }
+        .absen-status-indicator.pulang { background: #d1f2eb; color: #0f5132; }
+
+        .absen-body { display: none; padding: 15px; background: #f8f9fa; }
+        .absen-body.show { display: block; }
+
+        .status-grid-compact { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .status-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; border: 2px solid #dee2e6; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; background: white; transition: all 0.2s; }
+        .status-label input { display: none; }
+        
+        .sl-h:has(input:checked), .sl-h.selected { background: #d4edda; border-color: #28a745; color: #155724; }
+        .sl-a:has(input:checked), .sl-a.selected { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .sl-i:has(input:checked), .sl-i.selected { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .sl-s:has(input:checked), .sl-s.selected { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .sl-t:has(input:checked), .sl-t.selected { background: #ffeaa7; border-color: #fd7e14; color: #d35400; }
+        .sl-k:has(input:checked), .sl-k.selected { background: #e2d9f3; border-color: #6f42c1; color: #4a2c82; }
+        .sl-p:has(input:checked), .sl-p.selected { background: #d1f2eb; border-color: #20c997; color: #0f5132; }
+
+        .sticky-save { position: sticky; bottom: 10px; z-index: 99; margin-top: 15px; padding: 12px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); border-radius: 6px; }
+
+        /* TABEL REKAP */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid #dee2e6; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #dee2e6; padding: 6px 4px; text-align: center; }
+        th { background: #1e3799; color: white; font-size: 10px; }
+
+        /* MODAL DETAIL KEDISIPLINAN */
+        .modal-profil {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.7); 
+            overflow-y: auto;
+        }
+        .modal-content-profil {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover { color: #000; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-box {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+        }
+        .bg-alpa { background-color: #dc3545; }
+        .bg-telat { background-color: #fd7e14; }
+        .bg-keluar { background-color: #6f42c1; }
+        .bg-izin { background-color: #17a2b8; }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+        .history-item {
+            border-bottom: 1px solid #ddd;
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-print {
+            background-color: #1e3799;
+            color: white;
+            flex: 1;
+        }
+        .setting-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        #loading-overlay {
+            display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999; align-items: center; justify-content: center;
+            font-weight: bold; color: #1e3799; font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay">Memproses Sinkronisasi Cloud...</div>
+
+<div class="container">
+    <div class="header-area">
+        <h2>PP Nurul Islam Al-Munawwir</h2>
+        <button class="btn-sync-global" onclick="tarikDataDariCloud(true)">🔄 Sinkron Cloud</button>
+    </div>
+    <div class="status-badge">SISTEM HYBRID: AMAN OFFLINE & ONLINE</div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-absen')">🎯 Absensi</button>
+        <button class="tab-btn" onclick="switchTab('tab-pelanggaran-khusus')">🛡️ Pelanggaran</button>
+        <button class="tab-btn" onclick="switchTab('tab-rekap')">📊 Rekap</button>
+        <button class="tab-btn" onclick="switchTab('tab-pengaturan')">⚙️ Setting</button>
+    </div>
+
+    <div id="tab-absen" class="panel active">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Kegiatan:</label>
+                <select id="absen-kegiatan" onchange="renderTabelAbsen()"></select>
+            </div>
+            <div class="form-group">
+                <label>Tanggal:</label>
+                <input type="date" id="absen-tanggal" onchange="renderTabelAbsen()">
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search-santri" placeholder="Cari Nama..." onkeyup="filterSantriAbsen()">
+        </div>
+        
+        <p style="font-size:10px; color:#6c757d; text-align:center; margin: 5px 0;">
+             👆 Klik Nama Santri untuk Membuka Pilihan Status 👇
+        </p>
+
+        <div id="container-kartu-absen" class="absen-list-container"></div>
+
+        <div class="sticky-save">
+            <button class="btn-success" onclick="simpanAbsenMekanismeHybrid()">💾 SIMPAN ABSENSI (ANTI-GAGAL SINYAL)</button>
+        </div>
+    </div>
+
+    <div id="tab-pelanggaran-khusus" class="panel">
+        <h3 style="font-size:14px;">Input Pelanggaran Khusus</h3>
+        <div class="form-group" style="background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #dee2e6;">
+            <label>Pilih Santri:</label>
+            <select id="khusus-santri" style="margin-bottom:8px;"></select>
+            
+            <label>Kategori Pelanggaran:</label>
+            <select id="khusus-kategori" onchange="cekKategoriManual()" style="margin-bottom:8px;">
+                <option value="Merokok">Merokok</option>
+                <option value="Keluar Batas">Keluar Batas Pesantren</option>
+                <option value="Tidak Sekolah">Membolos Sekolah</option>
+                <option value="Berkelahi">Berkelahi</option>
+                <option value="Membawa HP">Membawa HP Ilegal</option>
+                <option value="LAINNYA">-- LAINNYA (KETIK MANUAL) --</option>
+            </select>
+            
+            <div id="box-kategori-manual" style="display:none; margin-bottom:8px;">
+                <input type="text" id="input-kategori-text" placeholder="Ketik jenis pelanggaran baru...">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Takziran:</label>
+                    <select id="khusus-tipe-mengaji">
+                        <option value="Juz">Juz</option>
+                        <option value="Lembar">Lembar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah:</label>
+                    <input type="number" id="khusus-jumlah-mengaji" value="1" min="1">
+                </div>
+            </div>
+            
+            <label>Tugas Fisik / Kebersihan:</label>
+            <textarea id="khusus-tugas-fisik" rows="2" placeholder="Contoh: Bersihkan WC Asrama..." style="margin-bottom:8px;"></textarea>
+            
+            <button class="btn-primary" onclick="simpanPelanggaranKhususMekanismeHybrid()">Simpan Pelanggaran Khusus</button>
+        </div>
+        
+        <h3 style="font-size:14px; margin-top:15px;">Daftar Pelanggaran Tercatat</h3>
+        <div id="list-pelanggaran-khusus"></div>
+    </div>
+
+    <div id="tab-rekap" class="panel">
+        <h3 style="font-size:14px;">Rekapitulasi Periode</h3>
+        <div class="form-row">
+            <div class="form-group"><label>Dari:</label><input type="date" id="rekap-dari"></div>
+            <div class="form-group"><label>Sampai:</label><input type="date" id="rekap-sampai"></div>
+        </div>
+        <button class="btn-primary" style="margin-bottom:10px;" onclick="prosesRekap()">Hitung Data</button>
+
+        <div class="table-responsive">
+            <table id="tabel-rekap" style="display:none;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Nama</th>
+                        <th>A</th><th>I</th><th>S</th><th>T</th><th>K</th><th>P</th>
+                        <th>Takziran</th>
+                    </tr>
+                </thead>
+                <tbody id="body-rekap"></tbody>
+            </table>
+        </div>
+
+        <div id="area-surat-whatsapp" style="display: none; margin-top:15px;">
+            <h3 style="font-size:14px;">Generate Surat WA</h3>
+            <div class="form-row" style="gap:5px;">
+                <button class="btn-primary" style="font-size:11px;" onclick="pilihModelSurat('absensi')">Absensi</button>
+                <button class="btn-primary" style="font-size:11px;" onclick="pilihModelSurat('khusus')">Pelanggaran</button>
+            </div>
+            <button class="btn-success" style="margin-top:5px;" onclick="pilihModelSurat('gabungan')">📜 GABUNGAN LENGKAP</button>
+            
+            <button class="btn-whatsapp" onclick="salinSuratKeClipboard()">Salin Teks</button>
+            <div id="konten-surat" style="white-space: pre-wrap; background: #eef2f7; padding: 10px; border-radius: 5px; margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
+        </div>
+    </div>
+
+    <div id="tab-pengaturan" class="panel">
+        <div class="setting-box">
+            <h3 style="font-size:13px; margin-top:0;">📚 Kelola Jenis Kegiatan</h3>
+            <div class="form-row">
+                <input type="text" id="input-kegiatan-baru" placeholder="Nama kegiatan baru..." style="flex:2;">
+                <button class="btn-success" style="flex:1; font-size:11px;" onclick="tambahJenisKegiatanDinamisCloud()">➕ Tambah</button>
+            </div>
+            <div class="table-responsive" style="max-height:150px; overflow-y:auto; margin-top:5px;">
+                <table style="min-width:100%;">
+                    <thead><tr><th style="text-align:left;">Nama Kegiatan</th><th style="width:60px;">Aksi</th></tr></thead>
+                    <tbody id="preview-tabel-kegiatan"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="setting-box">
+            <h3 style="font-size:13px; margin-top:0;">📋 Kelola Daftar Nama Santri (Hapus/Edit)</h3>
+            <div class="table-responsive" style="max-height:200px; overflow-y:auto;">
+                <table style="min-width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding-left:5px;">Nama Santri</th>
+                            <th style="width:70px;">Kamar</th>
+                            <th style="width:60px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-tabel-santri"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="setting-box">
+            <h3 style="font-size:13px; margin-top:0;">⚖️ Bobot Takziran</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div><label>1x Alpa = .. Lbr</label><input type="number" id="rule-alpa-mengaji" value="5"></div>
+                <div><label>1x Telat = .. Lbr</label><input type="number" id="rule-telat-mengaji" value="2"></div>
+                <div><label>1x Keluar = .. Lbr</label><input type="number" id="rule-keluar-mengaji" value="2"></div>
+                <div><label>1x Alpa = .. Rakaat</label><input type="number" id="rule-alpa-sholat" value="6"></div>
+                <div><label>1x Pulang = .. Lbr</label><input type="number" id="rule-pulang-mengaji" value="0"></div>
+            </div>
+        </div>
+
+        <div class="form-group" style="background:#f8f9fa; padding:10px; border:1px solid #dee2e6; border-radius:6px;">
+            <h3 style="font-size:13px; margin-top:0;">➕ Tambah Santri Baru</h3>
+            <input type="text" id="manual-nama" placeholder="Nama Lengkap" style="margin-bottom:5px;">
+            <input type="text" id="manual-domisili" placeholder="No. Kamar (Cth: B-02)" style="margin-bottom:5px;">
+            <input type="text" id="manual-kamar" placeholder="Nama Kepala Kamar" style="margin-bottom:5px;">
+            <button class="btn-primary" onclick="tambahSantriBaruMekanismeHybrid()">Simpan Santri Baru</button>
+        </div>
+        
+        <button class="btn-danger" style="width:auto; font-size:10px; margin-top:10px;" onclick="resetServerCloudKeBawaanAwal()">⚠️ Reset Semua Data Server Cloud</button>
+    </div>
+</div>
+
+<div id="modalDetailSantri" class="modal-profil">
+    <div class="modal-content-profil">
+        <span class="close-modal" onclick="tutupModalDetail()">&times;</span>
+        <h3 style="color:#1e3799; margin-top:0; border-bottom: 2px solid #1e3799; padding-bottom:10px;">Detail Kedisiplinan Santri</h3>
+        <div style="margin-bottom: 15px;">
+            <h2 id="detailNama" style="margin:0; font-size: 20px;">NAMA SANTRI</h2>
+            <p id="detailKamar" style="margin:5px 0; color:#666; font-size:14px;">Kamar: -</p>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box bg-alpa"><div style="font-size:24px;" id="statAlpa">0</div><div style="font-size:10px;">ALPA</div></div>
+            <div class="stat-box bg-telat"><div style="font-size:24px;" id="statTelat">0</div><div style="font-size:10px;">TELAT</div></div>
+            <div class="stat-box bg-keluar"><div style="font-size:24px;" id="statKeluar">0</div><div style="font-size:10px;">KELUAR</div></div>
+            <div class="stat-box bg-izin"><div style="font-size:24px;" id="statIzin">0</div><div style="font-size:10px;">IZIN/SAKIT</div></div>
+        </div>
+        <h4 style="margin:10px 0 5px 0; font-size:14px;">Riwayat Absensi Negatif:</h4>
+        <div class="history-list" id="listRiwayatAbsen"></div>
+        <h4 style="margin:10px 0 5px 0; font-size:14px;">Pelanggaran Khusus:</h4>
+        <div class="history-list" id="listRiwayatKhusus" style="background:#fff5f5;"></div>
+        <div style="background:#eef2f7; padding:10px; border-radius:5px; margin-top:10px; border-left: 4px solid #1e3799;">
+            <strong>Total Takziran Terhitung:</strong><br><span id="totalTakziranText" style="font-size:16px; color:#d63031;">-</span>
+        </div>
+        <div class="action-buttons">
+            <button class="btn-danger" onclick="tutupModalDetail()" style="flex:1;">Tutup</button>
+            <button class="btn-print" onclick="cetakSuratPeringatanPDF()" style="flex:2;">🖨️ Cetak Surat Peringatan (A5)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CLOUD_SERVER_URL = "https://script.google.com/macros/s/AKfycbwcixcUf4FC0NcEdsJvhEiSz_ZdUsU6Wfeg84XwuLn9dXQEGoRizvrM-wJdt-fRLK0ZAw/exec";
+
+    const DATA_BAWAAN_ASLI = [
+        {id: 1, nama: "HAFIDZ", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 2, nama: "ILAL", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 3, nama: "SHOHIB", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 4, nama: "ZAKARIA", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 5, nama: "SYAIKHONI", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 6, nama: "WASIK", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 7, nama: "ROBIN", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
+        {id: 8, nama: "FARIS BESAR", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 9, nama: "ARDI", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 10, nama: "RISKI WAHID", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 11, nama: "WASIL", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 12, nama: "DAYAT", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 13, nama: "WALI", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 14, nama: "MUKHLIS", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 15, nama: "FAUZAN", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 16, nama: "RAHMAT", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 17, nama: "ALFIN", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 18, nama: "REHAN", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 19, nama: "RISKI WADUD", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 20, nama: "JUNAIDI", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 21, nama: "ARIF", domisili: "A-03", kamar: "FAUZAN"},
+        {id: 22, nama: "AGUS", domisili: "B-01", kamar: "SOBIRIN"},
+        {id: 23, nama: "ILZAM", domisili: "B-01", kamar: "SOBIRIN"},
+        {id: 24, nama: "WAHYU", domisili: "B-01", kamar: "SOBIRIN"},
+        {id: 25, nama: "SOBIRIN", domisili: "B-01", kamar: "SOBIRIN"},
+        {id: 26, nama: "ROSI", domisili: "B-01", kamar: "SOBIRIN"},
+        {id: 27, nama: "ZIDAN", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 28, nama: "FENDY", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 29, nama: "FARIS KECIL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 30, nama: "FAREL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 31, nama: "SOIM MUKHTAR", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 32, nama: "HUMAM", domisili: "B-03", kamar: "ROFIQI"},
+        {id: 33, nama: "SUHAIMI", domisili: "B-03", kamar: "ROFIQI"},
+        {id: 34, nama: "ROFIQI", domisili: "B-03", kamar: "ROFIQI"},
+        {id: 35, nama: "RIZAL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
+        {id: 36, nama: "ISKANDAR", domisili: "B-03", kamar: "ROFIQI"}
+    ];
+
+    const KEGIATAN_DEFAULT = ["Salat Subuh", "Salat Dzuhur", "Salat Asar", "Salat Magrib", "Salat Isya", "Shalat Duha", "Apel Pagi", "Ngaji Ba'da Maghrib", "Ngaji Ba'da Dzuhur"];
+    
+    let daftarSantri = [...DATA_BAWAAN_ASLI];
+    let daftarKegiatan = [...KEGIATAN_DEFAULT];
+    let databaseAbsen = {};
+    let databaseKhusus = [];
+    let globalPelanggarAbsen = [];
+    let santriTerpilihDetail = null;
+    let teksSuratTerpilih = "";
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const hariIni = new Date().toISOString().slice(0, 10);
+        document.getElementById('absen-tanggal').value = hariIni;
+        document.getElementById('rekap-dari').value = hariIni;
+        document.getElementById('rekap-sampai').value = hariIni;
+        
+        loadDataOfflineLokal();
+        tarikDataDariCloud(false); 
+    });
+
+    function showLoading(status) {
+        document.getElementById('loading-overlay').style.display = status ? "flex" : "none";
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if(event && event.currentTarget) event.currentTarget.classList.add('active');
+    }
+
+    function loadDataOfflineLokal() {
+        let s = localStorage.getItem('NURIS_CLOUD_daftarSantri');
+        if(s) daftarSantri = JSON.parse(s);
+        let k = localStorage.getItem('NURIS_CLOUD_daftarKegiatan');
+        if(k) daftarKegiatan = JSON.parse(k);
+        let a = localStorage.getItem('NURIS_CLOUD_databaseAbsen');
+        if(a) databaseAbsen = JSON.parse(a);
+        let p = localStorage.getItem('NURIS_CLOUD_databaseKhusus');
+        if(p) databaseKhusus = JSON.parse(p);
+
+        refreshSemuaTampilanLayar();
+    }
+
+    function simpanDataOfflineLokal() {
+        localStorage.setItem('NURIS_CLOUD_daftarSantri', JSON.stringify(daftarSantri));
+        localStorage.setItem('NURIS_CLOUD_daftarKegiatan', JSON.stringify(daftarKegiatan));
+        localStorage.setItem('NURIS_CLOUD_databaseAbsen', JSON.stringify(databaseAbsen));
+        localStorage.setItem('NURIS_CLOUD_databaseKhusus', JSON.stringify(databaseKhusus));
+    }
+
+    function refreshSemuaTampilanLayar() {
+        renderDropdownKegiatan();
+        renderTabelAbsen();
+        renderDropdownSantriPusat();
+        renderPelanggaranKhusus();
+        renderTabelKelolaKegiatan();
+        renderTabelKelolaSantri();
+    }
+
+    function renderDropdownKegiatan() {
+        let sel = document.getElementById('absen-kegiatan');
+        let valSebelumnya = sel.value;
+        sel.innerHTML = "";
+        daftarKegiatan.forEach(kg => {
+            let op = document.createElement('option'); op.value = kg; op.text = kg; sel.add(op);
+        });
+        if(valSebelumnya && daftarKegiatan.includes(valSebelumnya)) sel.value = valSebelumnya;
+    }
+
+    // ==========================================
+    // SINKRONISASI AMBIL DATA CLOUD
+    // ==========================================
+    function tarikDataDariCloud(alertSukses = false) {
+        showLoading(true);
+        fetch(CLOUD_SERVER_URL)
+        .then(res => res.json())
+        .then(data => {
+            if(data.daftarSantri) daftarSantri = data.daftarSantri;
+            if(data.daftarKegiatan) daftarKegiatan = data.daftarKegiatan;
+            if(data.databaseAbsen) databaseAbsen = data.databaseAbsen;
+            if(data.databaseKhusus) databaseKhusus = data.databaseKhusus;
+
+            simpanDataOfflineLokal();
+            refreshSemuaTampilanLayar();
+            showLoading(false);
+            if(alertSukses) alert("✅ Sinkronisasi Berhasil! Data HP sama dengan Cloud server pusat.");
+        })
+        .catch(err => {
+            showLoading(false);
+            console.log("Mode Offline aktif.");
+            if(alertSukses) alert("⚠️ Gagal terhubung ke Cloud. Sinyal bermasalah.");
+        });
+    }
+
+    function renderTabelAbsen() {
+        let container = document.getElementById('container-kartu-absen');
+        container.innerHTML = "";
+        let tgl = document.getElementById('absen-tanggal').value;
+        let keg = document.getElementById('absen-kegiatan').value;
+        let keyDB = tgl + '_' + keg;
+        let dataHariIni = databaseAbsen[keyDB] || {};
+
+        daftarSantri.forEach(function(santri) {
+            let statusNow = dataHariIni[santri.id] || "H"; 
+            let indicatorClass = "hadir";
+            if(statusNow === 'A') indicatorClass = "alpa";
+            else if(statusNow === 'I') indicatorClass = "izin";
+            else if(statusNow === 'S') indicatorClass = "sakit";
+            else if(statusNow === 'T') indicatorClass = "telat";
+            else if(statusNow === 'K') indicatorClass = "keluar";
+            else if(statusNow === 'P') indicatorClass = "pulang";
+
+            let item = document.createElement('div');
+            item.className = 'absen-item';
+            item.setAttribute('data-search', santri.nama.toLowerCase());
+            
+            let headerHtml = `<div class="absen-header" onclick="toggleAbsenBody(this)">
+                <div class="absen-nama-text">${santri.nama}</div>
+                <div class="absen-status-indicator ${indicatorClass}" id="ind-${santri.id}">${statusNow}</div>
+            </div>`;
+            
+            let optionsHtml = `<div class="absen-body"><div class="status-grid-compact">`;
+            const statuses = [
+                {code:'H', cls:'sl-h'}, {code:'A', cls:'sl-a'}, {code:'I', cls:'sl-i'},
+                {code:'S', cls:'sl-s'}, {code:'T', cls:'sl-t'}, {code:'K', cls:'sl-k'},
+                {code:'P', cls:'sl-p'}
+            ];
+
+            statuses.forEach(st => {
+                let checked = (statusNow === st.code) ? "checked" : "";
+                let selectedClass = (statusNow === st.code) ? "selected" : "";
+                optionsHtml += `
+                    <label class="status-label ${st.cls} ${selectedClass}" onclick="pilihStatus('${santri.id}', '${st.code}', this)">
+                        <input type="radio" name="s-${santri.id}" value="${st.code}" ${checked}>
+                        ${st.code}
+                    </label>`;
+            });
+            optionsHtml += `</div></div></div>`;
+            item.innerHTML = headerHtml + optionsHtml;
+            container.appendChild(item);
+        });
+    }
+
+    function toggleAbsenBody(headerEl) {
+        let body = headerEl.nextElementSibling;
+        let isOpen = body.classList.contains('show');
+        document.querySelectorAll('.absen-body').forEach(b => b.classList.remove('show'));
+        document.querySelectorAll('.absen-header').forEach(h => h.classList.remove('active'));
+        if (!isOpen) {
+            body.classList.add('show');
+            headerEl.classList.add('active');
+        }
+    }
+
+    function pilihStatus(santriId, code, labelEl) {
+        let parentGrid = labelEl.parentElement;
+        parentGrid.querySelectorAll('.status-label').forEach(l => l.classList.remove('selected'));
+        labelEl.classList.add('selected');
+        labelEl.querySelector('input').checked = true;
+        
+        let indicator = document.getElementById('ind-' + santriId);
+        indicator.innerText = code;
+        indicator.className = 'absen-status-indicator';
+        if(code === 'H') indicator.classList.add('hadir');
+        else if(code === 'A') indicator.classList.add('alpa');
+        else if(code === 'I') indicator.classList.add('izin');
+        else if(code === 'S') indicator.classList.add('sakit');
+        else if(code === 'T') indicator.classList.add('telat');
+        else if(code === 'K') indicator.classList.add('keluar');
+        else if(code === 'P') indicator.classList.add('pulang');
+    }
+
+    function filterSantriAbsen() {
+        let input = document.getElementById('search-santri').value.toLowerCase();
+        let items = document.getElementsByClassName('absen-item');
+        for (let i = 0; i < items.length; i++) {
+            let searchData = items[i].getAttribute('data-search');
+            items[i].style.display = searchData.includes(input) ? "" : "none";
+        }
+    }
+
+    function simpanAbsenMekanismeHybrid() {
+        let tgl = document.getElementById('absen-tanggal').value;
+        let keg = document.getElementById('absen-kegiatan').value;
+        if(!tgl || !keg) return alert("Pilih tanggal & kegiatan!");
+
+        let keyDB = tgl + '_' + keg;
+        if(!databaseAbsen[keyDB]) databaseAbsen[keyDB] = {};
+        
+        daftarSantri.forEach(s => {
+            let el = document.querySelector(`input[name="s-${s.id}"]:checked`);
+            if(el) databaseAbsen[keyDB][s.id] = el.value;
+        });
+
+        simpanDataOfflineLokal();
+        dorongDatabaseKeCloudServer("Data Absensi Berhasil Disimpan!");
+    }
+
+    function simpanPelanggaranKhususMekanismeHybrid() {
+        let nm = document.getElementById('khusus-santri').value;
+        let katSelect = document.getElementById('khusus-kategori').value;
+        let katFinal = (katSelect === 'LAINNYA') ? document.getElementById('input-kategori-text').value.toUpperCase() : katSelect;
+        if(!katFinal) return alert("Isi kategori pelanggaran!");
+        let jml = parseInt(document.getElementById('khusus-jumlah-mengaji').value);
+        let tip = document.getElementById('khusus-tipe-mengaji').value;
+        let fis = document.getElementById('khusus-tugas-fisik').value;
+        if(!fis) return alert("Isi tugas fisik!");
+        
+        let tgl = new Date().toISOString().slice(0,10);
+        databaseKhusus.push({nama: nm, kategori: katFinal, jumlah: jml, tipe: tip, fisik: fis, tanggal: tgl});
+
+        document.getElementById('khusus-tugas-fisik').value = "";
+        document.getElementById('khusus-jumlah-mengaji').value = "1";
+        document.getElementById('input-kategori-text').value = "";
+        document.getElementById('box-kategori-manual').style.display = "none";
+        
+        simpanDataOfflineLokal();
+        renderPelanggaranKhusus();
+        dorongDatabaseKeCloudServer("Pelanggaran Khusus Berhasil Tersimpan!");
+    }
+
+    function hapusPelKhusus(i) { 
+        if(confirm("Hapus pelanggaran ini dari Server?")) { 
+            databaseKhusus.splice(i,1); 
+            simpanDataOfflineLokal();
+            renderPelanggaranKhusus();
+            dorongDatabaseKeCloudServer("Pelanggaran Berhasil Dihapus!");
+        }
+    }
+
+    // ==========================================
+    // KELOLA KEGIATAN & DATA SANTRI (FITUR BARU)
+    // ==========================================
+    function tambahJenisKegiatanDinamisCloud() {
+        let namaBaru = document.getElementById('input-kegiatan-baru').value.trim();
+        if (!namaBaru) return alert("Ketik nama kegiatannya!");
+        if (daftarKegiatan.includes(namaBaru)) return alert("Kegiatan sudah ada!");
+        
+        daftarKegiatan.push(namaBaru);
+        document.getElementById('input-kegiatan-baru').value = "";
+        
+        simpanDataOfflineLokal();
+        refreshSemuaTampilanLayar();
+        dorongDatabaseKeCloudServer("Kegiatan Baru Berhasil Ditambahkan!");
+    }
+
+    function hapusJenisKegiatanCloud(idx) {
+        if(confirm(`Hapus jenis kegiatan "${daftarKegiatan[idx]}" dari Server Pusat?`)) {
+            daftarKegiatan.splice(idx, 1);
+            simpanDataOfflineLokal();
+            refreshSemuaTampilanLayar();
+            dorongDatabaseKeCloudServer("Kegiatan Berhasil Dihapus!");
+        }
+    }
+
+    function renderTabelKelolaKegiatan() {
+        let body = document.getElementById('preview-tabel-kegiatan');
+        body.innerHTML = "";
+        daftarKegiatan.forEach((keg, idx) => {
+            body.innerHTML += `<tr>
+                <td style="text-align:left; padding-left:10px; font-size:11px;"><b>${keg}</b></td>
+                <td><button class="btn-danger" style="padding:4px 8px; font-size:9px; width:auto;" onclick="hapusJenisKegiatanCloud(${idx})">Hapus</button></td>
+            </tr>`;
+        });
+    }
+
+    function tambahSantriBaruMekanismeHybrid() {
+        let n = document.getElementById('manual-nama').value.toUpperCase().trim();
+        let d = document.getElementById('manual-domisili').value.trim();
+        let k = document.getElementById('manual-kamar').value.trim();
+        if(n && d && k) {
+            let id = daftarSantri.length > 0 ? Math.max(...daftarSantri.map(x=>x.id))+1 : 1;
+            daftarSantri.push({id:id, nama:n, domisili:d, kamar:k});
+            
+            document.getElementById('manual-nama').value = "";
+            document.getElementById('manual-domisili').value = "";
+            document.getElementById('manual-kamar').value = "";
+            
+            simpanDataOfflineLokal();
+            refreshSemuaTampilanLayar();
+            dorongDatabaseKeCloudServer("Santri Baru Berhasil Ditambahkan!");
+        } else {
+            alert("Harap lengkapi seluruh form!");
+        }
+    }
+
+    function hapusSantriCloud(idSantri, namaSantri) {
+        if(confirm(`⚠️ Apakah Anda yakin ingin MENGHAPUS santri bernama "${namaSantri}"? Data riwayat lamanya tidak akan hilang, namun namanya tidak akan masuk daftar absen lagi.`)) {
+            daftarSantri = daftarSantri.filter(s => s.id !== idSantri);
+            simpanDataOfflineLokal();
+            refreshSemuaTampilanLayar();
+            dorongDatabaseKeCloudServer(`Santri bernama ${namaSantri} berhasil dihapus dari sistem!`);
+        }
+    }
+
+    function renderTabelKelolaSantri() {
+        let body = document.getElementById('preview-tabel-santri');
+        body.innerHTML = "";
+        daftarSantri.forEach(s => {
+            body.innerHTML += `<tr>
+                <td style="text-align:left; font-size:12px; padding: 4px;"><b>${s.nama}</b></td>
+                <td style="font-size:11px; color:#555;">${s.domisili}</td>
+                <td><button class="btn-danger" style="padding:3px 6px; font-size:9px; width:auto;" onclick="hapusSantriCloud(${s.id}, '${s.nama}')">Hapus</button></td>
+            </tr>`;
+        });
+    }
+
+    function resetServerCloudKeBawaanAwal() {
+        if(confirm("⚠️ PERINGATAN: Menghapus SELURUH catatan di server dan internal HP. Lanjutkan?")) {
+            daftarSantri = [...DATA_BAWAAN_ASLI];
+            daftarKegiatan = [...KEGIATAN_DEFAULT];
+            databaseAbsen = {};
+            databaseKhusus = [];
+            simpanDataOfflineLokal();
+            dorongDatabaseKeCloudServer("Seluruh Server & HP Berhasil Bersih Direset!");
+        }
+    }
+
+    // PENDORONG DATA GLOBAL
+    function dorongDatabaseKeCloudServer(teksAlertSukses) {
+        showLoading(true);
+        let paketLengkap = {
+            daftarSantri: daftarSantri,
+            daftarKegiatan: daftarKegiatan,
+            databaseAbsen: databaseAbsen,
+            databaseKhusus: databaseKhusus
+        };
+
+        fetch(CLOUD_SERVER_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(paketLengkap)
+        })
+        .then(() => {
+            showLoading(false);
+            alert("✅ " + teksAlertSukses + " (Tersinkronisasi Online)");
+            tarikDataDariCloud(false); 
+        })
+        .catch(err => {
+            showLoading(false);
+            alert("⚠️ Tersimpan OFFLINE! Sinyal internetmu terputus. Klik tombol 'Sinkron Cloud' di atas saat jaringan kembali.");
+        });
+    }
+
+    function cekKategoriManual() {
+        let cat = document.getElementById('khusus-kategori').value;
+        document.getElementById('box-kategori-manual').style.display = (cat === 'LAINNYA') ? "block" : "none";
+    }
+
+    function renderPelanggaranKhusus() {
+        let c = document.getElementById('list-pelanggaran-khusus'); c.innerHTML = "";
+        databaseKhusus.forEach((p,i) => {
+            c.innerHTML += `<div style="border-left:3px solid #dc3545; padding:8px; margin-bottom:6px; background:white; border:1px solid #eee; border-left-width:3px;">
+                <b style="font-size:12px;">${p.nama}</b> <span style="font-size:10px; color:#6c757d;">(${p.kategori})</span> 
+                <button onclick="hapusPelKhusus(${i})" style="float:right;width:auto;padding:2px 6px;font-size:9px;" class="btn-danger">Hapus</button><br>
+                <small style="font-size:10px; color:#495057;">+${p.jumlah} ${p.tipe} | Tugas: ${p.fisik}</small>
+            </div>`;
+        });
+    }
+
+    function renderDropdownSantriPusat() {
+        let s = document.getElementById('khusus-santri'); s.innerHTML="";
+        daftarSantri.forEach(d => { let o=document.createElement('option'); o.value=d.nama; o.text=d.nama; s.add(o); });
+    }
+
+    // REKAP & SURAT PERINGATAN A5
+    function prosesRekap() {
+        let d1 = document.getElementById('rekap-dari').value;
+        let d2 = document.getElementById('rekap-sampai').value;
+        if(!d1 || !d2) return alert("Pilih tanggal!");
+
+        let rA = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
+        let rT = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
+        let rK = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
+        let rP = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
+
+        let tbody = document.getElementById('body-rekap');
+        tbody.innerHTML = "";
+        globalPelanggarAbsen = [];
+
+        daftarSantri.forEach(s => {
+            let A=0,I=0,S=0,T=0,K=0,P=0;
+            for(let key in databaseAbsen) {
+                let tglKey = key.split("_")[0];
+                if(tglKey >= d1 && tglKey <= d2) {
+                    let st = databaseAbsen[key][s.id];
+                    if(st==='A') A++; else if(st==='I') I++; else if(st==='S') S++;
+                    else if(st==='T') T++; else if(st==='K') K++; else if(st==='P') P++;
+                }
+            }
+            let punyaKhusus = databaseKhusus.some(pk => pk.nama === s.nama && pk.tanggal >= d1 && pk.tanggal <= d2);
+            let totalLbr = (A*rA) + (T*rT) + (K*rK) + (P*rP);
+            let juz = Math.floor(totalLbr/10);
+            let sisa = totalLbr%10;
+            let txt = totalLbr>0 ? (juz>0?juz+' Juz ':'')+(sisa>0?sisa+' Lbr':'') : "-";
+
+            if(A>0 || I>0 || S>0 || T>0 || K>0 || P>0 || punyaKhusus) {
+                tbody.innerHTML += `<tr onclick="bukaModalDetailSantri('${s.nama}')" style="cursor:pointer;">
+                    <td style="text-align:left;"><b>${s.nama}</b></td>
+                    <td>${A}</td><td>${I}</td><td>${S}</td><td>${T}</td><td>${K}</td><td>${P}</td>
+                    <td>${txt}</td>
+                </tr>`;
+                globalPelanggarAbsen.push({nama:s.nama, A:A, I:I, S:S, T:T, K:K, P:P, txt:txt});
+            }
+        });
+
+        if(globalPelanggarAbsen.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='8' style='padding:15px;'>Tidak ada data indisipliner pada periode ini.</td></tr>";
+        }
+        document.getElementById('tabel-rekap').style.display = "table";
+        document.getElementById('area-surat-whatsapp').style.display = "block";
+        pilihModelSurat('gabungan');
+    }
+
+    function bukaModalDetailSantri(namaSantri) {
+        const santri = daftarSantri.find(s => s.nama === namaSantri);
+        if (!santri) return;
+        santriTerpilihDetail = santri;
+        document.getElementById('detailNama').innerText = santri.nama;
+        document.getElementById('detailKamar').innerText = `Kamar: ${santri.domisili} | Kepala Kamar: ${santri.kamar}`;
+
+        const d1 = document.getElementById('rekap-dari').value;
+        const d2 = document.getElementById('rekap-sampai').value;
+        let countA = 0, countT = 0, countK = 0, countIS = 0, totalLbr = 0, totalRakaat = 0;
+        let htmlAbsen = "";
+
+        for (let key in databaseAbsen) {
+            let tglKey = key.split("_")[0];
+            if (tglKey >= d1 && tglKey <= d2) {
+                let status = databaseAbsen[key][santri.id];
+                if (status && status !== 'H') {
+                    let tglFmt = tglKey.split("-").reverse().join("-");
+                    let ket = "";
+                    if (status === 'A') { countA++; ket = "ALPA"; }
+                    else if (status === 'T') { countT++; ket = "TELAT"; }
+                    else if (status === 'K') { countK++; ket = "KELUAR"; }
+                    else if (status === 'I' || status === 'S') { countIS++; ket = status==='I'?"IZIN":"SAKIT"; }
+                    
+                    let rA = parseInt(document.getElementById('rule-alpa-mengaji').value) || 0;
+                    let rT = parseInt(document.getElementById('rule-telat-mengaji').value) || 0;
+                    let rK = parseInt(document.getElementById('rule-keluar-mengaji').value) || 0;
+                    let rS = parseInt(document.getElementById('rule-alpa-sholat').value) || 0;
+
+                    if (status === 'A') { totalLbr += rA; totalRakaat += rS; } 
+                    else if (status === 'T') { totalLbr += rT; } 
+                    else if (status === 'K') { totalLbr += rK; }
+
+                    htmlAbsen += `<div class="history-item"><span>${tglFmt}</span> <b>${ket}</b></div>`;
+                }
+            }
+        }
+
+        document.getElementById('statAlpa').innerText = countA;
+        document.getElementById('statTelat').innerText = countT;
+        document.getElementById('statKeluar').innerText = countK;
+        document.getElementById('statIzin').innerText = countIS;
+        document.getElementById('listRiwayatAbsen').innerHTML = htmlAbsen || "<div style='text-align:center;color:#999;'>Tidak ada catatan negatif.</div>";
+
+        let htmlKhusus = "";
+        databaseKhusus.forEach(p => {
+            if (p.nama === santri.nama && p.tanggal >= d1 && p.tanggal <= d2) {
+                totalLbr += (p.tipe === 'Juz' ? p.jumlah * 10 : p.jumlah);
+                htmlKhusus += `<div class="history-item"><span>${p.tanggal}</span> <b>${p.kategori}</b> <small>(+${p.jumlah} ${p.tipe})</small></div>`;
+            }
+        });
+        document.getElementById('listRiwayatKhusus').innerHTML = htmlKhusus || "<div style='text-align:center;color:#999;'>Bersih dari pelanggaran khusus.</div>";
+
+        let juz = Math.floor(totalLbr / 10), lbr = totalLbr % 10;
+        let txtTakziran = (juz > 0 ? `${juz} Juz ` : "") + (lbr > 0 ? `${lbr} Lembar` : "");
+        if (txtTakziran === "") txtTakziran = "0 Lembar";
+        if (totalRakaat > 0) txtTakziran += ` + ${totalRakaat} Rakaat Sholat`;
+
+        document.getElementById('totalTakziranText').innerText = txtTakziran;
+        document.getElementById('modalDetailSantri').style.display = "block";
+    }
+
+    function cetakSuratPeringatanPDF() {
+        if (!santriTerpilihDetail) return;
+        const s = santriTerpilihDetail;
+        const alpa = document.getElementById('statAlpa').innerText;
+        const telat = document.getElementById('statTelat').innerText;
+        const keluar = document.getElementById('statKeluar').innerText;
+        const takziran = document.getElementById('totalTakziranText').innerText;
+        const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const win = window.open('', '_blank');
+        win.document.write(`
+        <html><head><title>SP - ${s.nama}</title><style>@page { size: A5; margin: 15mm; } body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; color: #000; } .kop { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; } .kop h2 { margin: 0; font-size: 14pt; text-transform: uppercase; } .kop p { margin: 2px 0; font-size: 9pt; } .judul { text-align: center; text-decoration: underline; font-weight: bold; font-size: 12pt; margin: 15px 0; } .box-takziran { border: 1px solid #000; padding: 10px; margin: 15px 0; background-color: #f9f9f9; } .footer { margin-top: 30px; text-align: right; }</style></head>
+        <body>
+            <div class="kop"><h2>Pondok Pesantren Nurul Islam Al-Munawwir</h2><p>Sampang, Madura, Jawa Timur</p></div>
+            <div class="judul">SURAT PERINGATAN & TAKZIRAN</div>
+            <p>Tanggal: ${today}</p>
+            <table style="width:100%; margin-bottom:15px;">
+                <tr><td width="120">Nama Santri</td><td>: <b>${s.nama}</b></td></tr>
+                <tr><td>Domisili</td><td>: ${s.domisili} (Kepala Kamar: ${s.kamar})</td></tr>
+            </table>
+            <p>Berdasarkan rekapitulasi kedisiplinan, santri tercatat melanggar: Alpa ${alpa}x, Telat ${telat}x, Keluar ${keluar}x. Dikenakan takziran wajib:</p>
+            <div class="box-takziran"><center><b>RINCIAN TAKZIRAN</b></center><p style="text-align:center; font-size:12pt; margin:10px 0; color:#d63031;"><b>${takziran}</b></p></div>
+            <p>Harap segera diselesaikan dengan penuh tanggung jawab.</p>
+            <div class="footer"><p>Sampang, ${today}</p><p>Pengurus Bidang Keamanan</p><br><br><br><p><b>( ___________________ )</b></p></div>
+            <script>window.onload = function() { window.print(); window.close(); }<\/script>
+        </body></html>`);
+        win.document.close();
+    }
+
+    function tutupModalDetail() {
+        document.getElementById('modalDetailSantri').style.display = "none";
+    }
+
+    function pilihModelSurat(tipe) {
+        let d1 = document.getElementById('rekap-dari').value.split("-").reverse().join("-");
+        let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
+        let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
+        let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
+        let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
+
+        let head = `SURAT KETERANGAN INDISIPLINER SANTRI`;
+        let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\nMaklumat Pengurus Pondok Pesantren Nurul Islam Al-Munawwir terkait kedisiplinan santri.\n\nBagi nama santri di bawah ini, mohon segera menuju dhalem sesudah sholat Isyak untuk takziran:\n\nPeriode: ${d1}\n\n`;
+
+        if(tipe === 'absensi' || tipe === 'gabungan') {
+            isi += "*DATA ABSENSI:*\n";
+            globalPelanggarAbsen.forEach((p,i) => {
+                let detailAbsen = [];
+                if(p.A > 0) detailAbsen.push(`Alpa ${p.A}x`);
+                if(p.T > 0) detailAbsen.push(`Telat ${p.T}x`);
+                let totalLbr = (p.A * rA_M) + (p.T * rT_M) + (p.K * rK_M) + (p.P * rP_M);
+                let juz = Math.floor(totalLbr / 10), sisa = totalLbr % 10;
+                let txtMengaji = (juz > 0 ? `${juz} Juz ` : "") + (sisa > 0 ? `${sisa} Lbr` : "");
+                isi += `${i+1}. *${p.nama}*: ${detailAbsen.join(", ") || "Hadir"} ➔ Mengaji: ${txtMengaji || '0 Lbr'}\n`;
+            });
+        }
+        teksSuratTerpilih = head + "\n\n" + isi;
+        document.getElementById('konten-surat').innerText = teksSuratTerpilih;
+    }
+
+    function salinSuratKeClipboard() {
+        navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
+    }
+</script>
+</body>
+</html>
