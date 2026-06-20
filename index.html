@@ -966,30 +966,125 @@
     }
 
     function pilihModelSurat(tipe) {
-        let d1 = document.getElementById('rekap-dari').value.split("-").reverse().join("-");
-        let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
-        let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
-        let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
-        let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
+    let d1 = document.getElementById('rekap-dari').value.split("-").reverse().join("-");
+    let d2 = document.getElementById('rekap-sampai').value.split("-").reverse().join("-");
+    
+    let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
+    let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
+    let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
+    let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
+    let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value)||0;
 
-        let head = `SURAT KETERANGAN INDISIPLINER SANTRI`;
-        let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\nMaklumat Pengurus Pondok Pesantren Nurul Islam Al-Munawwir terkait kedisiplinan santri.\n\nBagi nama santri di bawah ini, mohon segera menuju dhalem sesudah sholat Isyak untuk takziran:\n\nPeriode: ${d1}\n\n`;
+    let head = `*SURAT KETERANGAN INDISIPLINER SANTRI*\n\n`;
+    let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\n` +
+        `Kami yang bertanda tangan di bawah ini, atas nama Pengurus Pondok Pesantren Nurul Islam Al-Munawwir, menyampaikan maklumat terkait kedisiplinan santri.\n\n` +
+        `Sebagaimana maqolah Sayyidina Ali bin Abi Thalib karromallahu wajhah:\n\n` +
+        `*حَقٌّ بغيرِ nِظامٍ يَغلِبُهُ باطِلٌ بنِظامٍ*\n\n` +
+        `_Tanpa sistem yang mapan, kebenaran bisa dikalahkan oleh kebatilan._ Maka kami sebagai pengurus, demi menjaga ketertiban dan membiasakan kedisiplinan santri di lingkungan pesantren, menetapkan sanksi edukatif bagi nama-nama berikut. Harapannya, hal ini dapat menjadi bahan evaluasi agar santri yang bersangkutan bisa lebih disiplin di masa yang akan datang.\n\n` +
+        `Bagi nama-nama santri yang tercantum di bawah ini, mohon segera mendatangi depan dhalem sesudah kegiatan sholat Isyak untuk melaksanakan takziran mengaji:\n\n` +
+        `*REKAP PELANGGARAN PEKAN INI (Periode ${d1} s/d ${d2} M):*\n` +
+        `_(Ketentuan Umum: Alpa = ${rA_M} Lembar, Telat = ${rT_M} Lembar, 10 Lembar = 1 Juz)_\n\n`;
 
-        if(tipe === 'absensi' || tipe === 'gabungan') {
-            isi += "*DATA ABSENSI:*\n";
-            globalPelanggarAbsen.forEach((p,i) => {
-                let detailAbsen = [];
-                if(p.A > 0) detailAbsen.push(`Alpa ${p.A}x`);
-                if(p.T > 0) detailAbsen.push(`Telat ${p.T}x`);
-                let totalLbr = (p.A * rA_M) + (p.T * rT_M) + (p.K * rK_M) + (p.P * rP_M);
-                let juz = Math.floor(totalLbr / 10), sisa = totalLbr % 10;
-                let txtMengaji = (juz > 0 ? `${juz} Juz ` : "") + (sisa > 0 ? `${sisa} Lbr` : "");
-                isi += `${i+1}. *${p.nama}*: ${detailAbsen.join(", ") || "Hadir"} ➔ Mengaji: ${txtMengaji || '0 Lbr'}\n`;
-            });
+    let tglDariRaw = document.getElementById('rekap-dari').value;
+    let tglSampaiRaw = document.getElementById('rekap-sampai').value;
+    let filteredKhusus = databaseKhusus.filter(pk => pk.tanggal >= tglDariRaw && pk.tanggal <= tglSampaiRaw);
+    
+    let gabunganData = {};
+
+    globalPelanggarAbsen.forEach(p => {
+        if (!gabunganData[p.nama]) {
+            gabunganData[p.nama] = { nama: p.nama, alpa: p.A, telat: p.T, keluar: p.K, pulang: p.P, khusus: [], totalLembar: 0 };
         }
-        teksSuratTerpilih = head + "\n\n" + isi;
-        document.getElementById('konten-surat').innerText = teksSuratTerpilih;
+    });
+
+    filteredKhusus.forEach(pk => {
+        if (!gabunganData[pk.nama]) {
+            gabunganData[pk.nama] = { nama: pk.nama, alpa: 0, telat: 0, keluar: 0, pulang: 0, khusus: [], totalLembar: 0 };
+        }
+        gabunganData[pk.nama].khusus.push(pk);
+    });
+
+    let teksDaftarSantri = "";
+    let listMerokok = [];
+    let listKeluarBatas = [];
+    let nomor = 1;
+
+    for (let nama in gabunganData) {
+        let s = gabunganData[nama];
+        let rincianTeks = [];
+        let lembarAbsen = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
+        let lembarKhusus = 0;
+        let listTugasFisik = [];
+
+        if (s.alpa > 0) rincianTeks.push(`Alpa ${s.alpa} Kali`);
+        if (s.telat > 0) rincianTeks.push(`Telat ${s.telat} Kali`);
+
+        s.khusus.forEach(pk => {
+            let lbrSanksi = (pk.tipe === 'Juz') ? pk.jumlah * 10 : pk.jumlah;
+            lembarKhusus += lbrSanksi;
+            rincianTeks.push(`${pk.kategori} (${pk.jumlah} ${pk.tipe})`);
+            
+            if (pk.fisik && !listTugasFisik.includes(pk.fisik)) {
+                listTugasFisik.push(pk.fisik);
+            }
+
+            if (pk.kategori.includes("Merokok") && !listMerokok.includes(nama)) listMerokok.push(nama);
+            if (pk.kategori.includes("Keluar Batas") && !listKeluarBatas.includes(nama)) listKeluarBatas.push(nama);
+        });
+
+        let totalLembarSemua = lembarAbsen + lembarKhusus;
+        let hitungJuz = Math.floor(totalLembarSemua / 10);
+        let hitungSisaLembar = totalLembarSemua % 10;
+
+        let teksTotalTakziran = "";
+        if (hitungJuz > 0 && hitungSisaLembar > 0) {
+            teksTotalTakziran = `${hitungJuz} Juz & ${hitungSisaLembar} Lembar`;
+        } else if (hitungJuz > 0) {
+            teksTotalTakziran = `${hitungJuz} Juz`;
+        } else {
+            teksTotalTakziran = `${hitungSisaLembar} Lembar`;
+        }
+
+        teksDaftarSantri += `${nomor}. *${nama}*: ${rincianTeks.join(" + ")}\n` +
+                            `   Total Takziran Mengaji: *${teksTotalTakziran}*\n`;
+        
+        if (listTugasFisik.length > 0) {
+            teksDaftarSantri += `   _(Kerja Fisik: ${listTugasFisik.join(" & ")})_\n`;
+        }
+        
+        teksDaftarSantri += `\n`;
+        nomor++;
     }
+
+    if (teksDaftarSantri === "") teksDaftarSantri = "_(Tidak ada catatan pelanggaran pada periode ini)_\n\n";
+
+    let teksDetailFisik = `*PELANGGARAN KHUSUS (DETAIL TUGAS FISIK):*\n\n`;
+
+    if (listMerokok.length > 0) {
+        teksDetailFisik += `1. *Kategori Pelanggaran Berat (Merokok)*\n` +
+                           `   Nama Santri: _${listMerokok.join(", ")}_\n` +
+                           `   *Takziran Fisik:* Merenovasi Gudang di kamar Langgher bagian timur dengan memindahkan semua barang tak terpakai ke dhalem, membersihkan area, merenovasi kamarnya, memindahkan pintu utara kembali ke pintu asal bagian timur, mengecat sampai rapi, memasang lampu penerang, permadani, kipas angin, serta menambal atap yang bocor.\n` +
+                           `   *Batas Waktu:* Jangka waktu 1 pekan. Jika belum selesai, wajib menambah bacaan Al-Quran 3 lembar dan tetap harus menyelesaikan renovasi tersebut (kamar akan difungsikan sebagai Kantor BP2SDI).\n\n`;
+    }
+
+    if (listKeluarBatas.length > 0) {
+        teksDetailFisik += `2. *Pelanggaran Keluar Batas ke Rumah Bhik Thima Malam Hari Tanpa Izin*\n` +
+                           `   Nama Santri: _${listKeluarBatas.join(", ")}_\n` +
+                           `   *Takziran Fisik:* Wajib mencabut rumput di area depan masjid, halaman masjid bagian utara, serta bagian selatan depan bawah gedung tahfidz sampai bersih.\n` +
+                           `   *Batas Waktu:* Jangka waktu 1 hari (besok saja setelah kegiatan Subuh). Jika masih ada satu rumput pun yang tersisa, akan dikenakan penambahan takziran membaca Al-Quran sebanyak 4 Lembar.\n\n`;
+    }
+
+    if (listMerokok.length === 0 && listKeluarBatas.length === 0) {
+        teksDetailFisik = "";
+    }
+
+    let closing = `Besar harapan kami, maklumat ini menjadi cermin bagi santri lainnya untuk tetap istiqomah dalam kedisiplinan. Jangan sampai pelanggaran ini menjadi contoh yang diikuti, namun jadikanlah ia pelajaran berharga agar kita tidak terjerumus pada kelalaian yang sama.\n\n` +
+        `Wassalamu’alaikum Warahmatullahi Wabarakatuh.\n\n` +
+        `*Pengurus Pondok Pesantren Nurul Islam Al-Munawwir*`;
+
+    teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
+    document.getElementById('konten-surat').innerText = teksSuratTerpilih;
+        }
 
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
