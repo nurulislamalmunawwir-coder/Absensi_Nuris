@@ -973,6 +973,7 @@
     let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
     let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
     let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
+    let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value)||0;
 
     let head = `SURAT KETERANGAN INDISIPLINER SANTRI\n\n`;
     let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\n` +
@@ -982,17 +983,22 @@
         `Tanpa sistem yang mapan, kebenaran bisa dikalahkan oleh kebatilan. Maka kami sebagai pengurus, demi menjaga ketertiban dan membiasakan kedisiplinan santri di lingkungan pesantren, menetapkan sanksi edukatif bagi nama-nama berikut. Harapannya, hal ini dapat menjadi bahan evaluasi agar santri yang bersangkutan bisa lebih disiplin di masa yang akan datang.\n\n` +
         `Bagi nama-nama santri yang tercantum di bawah ini, mohon segera mendatangi depan dhalem sesudah kegiatan sholat Isyak untuk melaksanakan takziran mengaji:\n\n` +
         `REKAP PELANGGARAN PEKAN INI (Periode ${d1} s/d ${d2} M):\n` +
-        `(Ketentuan Umum: Alpa = ${rA_M} Lembar, Telat = ${rT_M} Lembar, 10 Lembar = 1 Juz)\n\n`;
+        `(Ketentuan Umum: Alpa = ${rA_M} Lembar Mengaji & ${rA_S} Rakaat Sholat, Telat = ${rT_M} Lembar)\n\n`;
 
     let tglDariRaw = document.getElementById('rekap-dari').value;
     let tglSampaiRaw = document.getElementById('rekap-sampai').value;
-    let filteredKhusus = databaseKhusus.filter(pk => pk.tanggal >= tglDariRaw && pk.tanggal <= tglSampaiRaw);
+    
+    // FILTER: Hanya ambil pelanggaran khusus yang BELUM "Selesai"
+    let filteredKhusus = databaseKhusus.filter(pk => pk.tanggal >= tglDariRaw && pk.tanggal <= tglSampaiRaw && pk.status !== "Selesai");
     
     let gabunganData = {};
 
+    // FILTER: Hanya ambil pelanggar absen harian yang BELUM "Selesai"
     globalPelanggarAbsen.forEach(p => {
-        if (!gabunganData[p.nama]) {
-            gabunganData[p.nama] = { nama: p.nama, alpa: p.A, telat: p.T, keluar: p.K, pulang: p.P, khusus: [] };
+        if (p.status !== "Selesai" && (p.A > 0 || p.T > 0 || p.K > 0 || p.P > 0)) {
+            if (!gabunganData[p.nama]) {
+                gabunganData[p.nama] = { nama: p.nama, alpa: p.A, telat: p.T, keluar: p.K, pulang: p.P, khusus: [] };
+            }
         }
     });
 
@@ -1010,8 +1016,8 @@
         let s = gabunganData[nama];
         let rincianTeks = [];
         
-        // 1. Hitung lembar awal dari absensi umum harian
         let totalLembarSemua = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
+        let totalRakaatSholat = (s.alpa * rA_S);
         let listTugasFisik = [];
 
         if (s.alpa > 0) rincianTeks.push(`Alpa ${s.alpa} Kali`);
@@ -1021,39 +1027,30 @@
             let teksKhusus = `${pk.kategori}`;
             if(pk.jumlah > 0) {
                 teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
-                
-                // AKUMULASI OTOMATIS: Jika sanksi khusus berupa Juz, jadikan kelipatan 10 lembar
                 let konversiLembar = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
                 totalLembarSemua += konversiLembar;
             }
             rincianTeks.push(teksKhusus);
             
-            // Simpan info tugas fisik mandiri jika ada
             if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
                 listTugasFisik.push(pk.fisik);
             }
         });
 
-        // Tampilkan Baris Utama Nama Santri
         teksDaftarSantri += `${nomor}. ${nama}: ${rincianTeks.join(" + ")}\n`;
 
-        // 2. Tampilkan Total Akumulasi Mengaji Bersama (Absen + Khusus)
         if (totalLembarSemua > 0) {
             let hitungJuz = Math.floor(totalLembarSemua / 10);
             let hitungSisaLembar = totalLembarSemua % 10;
-
-            let teksTotalTakziran = "";
-            if (hitungJuz > 0 && hitungSisaLembar > 0) {
-                teksTotalTakziran = `${hitungJuz} Juz & ${hitungSisaLembar} Lembar`;
-            } else if (hitungJuz > 0) {
-                teksTotalTakziran = `${hitungJuz} Juz`;
-            } else {
-                teksTotalTakziran = `${hitungSisaLembar} Lembar`;
-            }
+            let teksTotalTakziran = (hitungJuz > 0 ? `${hitungJuz} Juz ` : "") + (hitungSisaLembar > 0 ? `& ${hitungSisaLembar} Lembar` : "");
+            if(hitungJuz === 0 && hitungSisaLembar > 0) teksTotalTakziran = `${hitungSisaLembar} Lembar`;
             teksDaftarSantri += `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
         }
         
-        // Tampilkan Kerja Fisik saja di baris bawah nama santri (jika ada)
+        if (totalRakaatSholat > 0) {
+            teksDaftarSantri += `   Total Takziran Sholat: ${totalRakaatSholat} Rakaat\n`;
+        }
+        
         if (listTugasFisik.length > 0) {
             teksDaftarSantri += `   (Kerja Fisik: ${listTugasFisik.join(" & ")})\n`;
         }
@@ -1064,20 +1061,13 @@
 
     if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
 
-    // 3. BAGIAN DETAIL BAWAH UNTUK LAMPIRAN TUGAS YANG SIFATNYA KELOMPOK
     let teksDetailFisik = "";
     if (filteredKhusus.length > 0) {
         teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS & TAKZIRAN TAMBAHAN):\n\n`;
-        
         let grupKategori = {};
         filteredKhusus.forEach(pk => {
             if (!grupKategori[pk.kategori]) {
-                grupKategori[pk.kategori] = { 
-                    namaSantri: [], 
-                    fisik: pk.fisik,
-                    jumlahBaca: pk.jumlah,
-                    tipeBaca: pk.tipe
-                };
+                grupKategori[pk.kategori] = { namaSantri: [], fisik: pk.fisik, jumlahBaca: pk.jumlah, tipeBaca: pk.tipe };
             }
             if (!grupKategori[pk.kategori].namaSantri.includes(pk.nama)) {
                 grupKategori[pk.kategori].namaSantri.push(pk.nama);
@@ -1087,12 +1077,7 @@
         let noKat = 1;
         for (let kat in grupKategori) {
             let g = grupKategori[kat];
-            
-            let teksBacaanManual = "-";
-            if (g.jumlahBaca > 0) {
-                teksBacaanManual = `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}`;
-            }
-
+            let teksBacaanManual = g.jumlahBaca > 0 ? `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}` : "-";
             teksDetailFisik += `${noKat}. Kategori Pelanggaran: ${kat}\n` +
                                `   Nama Santri: ${g.namaSantri.join(", ")}\n` +
                                `   Takziran Membaca: ${teksBacaanManual}\n` +
@@ -1107,7 +1092,7 @@
 
     teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
     document.getElementById('konten-surat').innerText = teksSuratTerpilih;
-}
+    }
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
     }
