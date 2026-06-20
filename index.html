@@ -1096,6 +1096,38 @@
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
     }
+function centangSelesaiTakziran(namaSantri, tipePelanggaran, infoUnik) {
+    let pesan = `Apakah santri atas nama ${namaSantri} benar-benar sudah menyelesaikan takziran ${tipePelanggaran === 'absen' ? 'Absensi' : 'Pelanggaran Khusus'}-nya?`;
+    
+    if (confirm(pesan)) {
+        if (tipePelanggaran === 'absen') {
+            globalPelanggarAbsen.forEach(p => {
+                if (p.nama === namaSantri) {
+                    p.status = "Selesai";
+                }
+            });
+        } else if (tipePelanggaran === 'khusus') {
+            databaseKhusus.forEach(pk => {
+                if (pk.nama === namaSantri && pk.kategori === infoUnik) {
+                    pk.status = "Selesai";
+                }
+            });
+        }
+
+        if (typeof simpanDataLokal === "function") {
+            simpanDataLokal();
+        } else if (typeof simpanKeLocalStorage === "function") {
+            simpanKeLocalStorage();
+        }
+
+        pilihModelSurat();
+        if (typeof tampilkanTabelRekap === "function") tampilkanTabelRekap();
+        if (typeof renderTabel === "function") renderTabel();
+
+        alert(`Alhamdulillah, takziran ${namaSantri} berhasil ditandai Selesai!`);
+    }
+}
+    
 </script>
 </body>
 </html>
