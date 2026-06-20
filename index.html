@@ -1010,7 +1010,7 @@
         let s = gabunganData[nama];
         let rincianTeks = [];
         
-        // Lembar atas murni dari akumulasi absensi umum (Alpa & Telat)
+        // 1. Hitung lembar awal dari absensi umum harian
         let totalLembarSemua = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
         let listTugasFisik = [];
 
@@ -1021,37 +1021,41 @@
             let teksKhusus = `${pk.kategori}`;
             if(pk.jumlah > 0) {
                 teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
+                
+                // AKUMULASI OTOMATIS: Jika sanksi khusus berupa Juz, jadikan kelipatan 10 lembar
+                let konversiLembar = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
+                totalLembarSemua += konversiLembar;
             }
             rincianTeks.push(teksKhusus);
             
-            // Satukan informasi takziran khusus untuk ditaruh di bawah nama santri (jika ada)
-            let komponenSanksi = [];
-            if (pk.jumlah > 0) komponenSanksi.push(`Bacaan Tambahan: ${pk.jumlah} ${pk.tipe}`);
-            if (pk.fisik && pk.fisik.trim() !== "") komponenSanksi.push(`Fisik: ${pk.fisik}`);
-            
-            let gabunganSanksiTeks = komponenSanksi.join(" & ");
-            if (gabunganSanksiTeks !== "" && !listTugasFisik.includes(gabunganSanksiTeks)) {
-                listTugasFisik.push(gabunganSanksiTeks);
+            // Simpan info tugas fisik mandiri jika ada
+            if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
+                listTugasFisik.push(pk.fisik);
             }
         });
 
-        let hitungJuz = Math.floor(totalLembarSemua / 10);
-        let hitungSisaLembar = totalLembarSemua % 10;
+        // Tampilkan Baris Utama Nama Santri
+        teksDaftarSantri += `${nomor}. ${nama}: ${rincianTeks.join(" + ")}\n`;
 
-        let teksTotalTakziran = "";
-        if (hitungJuz > 0 && hitungSisaLembar > 0) {
-            teksTotalTakziran = `${hitungJuz} Juz & ${hitungSisaLembar} Lembar`;
-        } else if (hitungJuz > 0) {
-            teksTotalTakziran = `${hitungJuz} Juz`;
-        } else {
-            teksTotalTakziran = `${hitungSisaLembar} Lembar`;
+        // 2. Tampilkan Total Akumulasi Mengaji Bersama (Absen + Khusus)
+        if (totalLembarSemua > 0) {
+            let hitungJuz = Math.floor(totalLembarSemua / 10);
+            let hitungSisaLembar = totalLembarSemua % 10;
+
+            let teksTotalTakziran = "";
+            if (hitungJuz > 0 && hitungSisaLembar > 0) {
+                teksTotalTakziran = `${hitungJuz} Juz & ${hitungSisaLembar} Lembar`;
+            } else if (hitungJuz > 0) {
+                teksTotalTakziran = `${hitungJuz} Juz`;
+            } else {
+                teksTotalTakziran = `${hitungSisaLembar} Lembar`;
+            }
+            teksDaftarSantri += `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
         }
-
-        teksDaftarSantri += `${nomor}. ${nama}: ${rincianTeks.join(" + ")}\n` +
-                            `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
         
+        // Tampilkan Kerja Fisik saja di baris bawah nama santri (jika ada)
         if (listTugasFisik.length > 0) {
-            teksDaftarSantri += `   (Sanksi Khusus: ${listTugasFisik.join(" / ")})\n`;
+            teksDaftarSantri += `   (Kerja Fisik: ${listTugasFisik.join(" & ")})\n`;
         }
         
         teksDaftarSantri += `\n`;
@@ -1060,7 +1064,7 @@
 
     if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
 
-    // 2. BAGIAN DETAIL BAWAH SEKARANG MENGGABUNGKAN TAKZIRAN MEMBACA DAN FISIK SECARA DINAMIS
+    // 3. BAGIAN DETAIL BAWAH UNTUK LAMPIRAN TUGAS YANG SIFATNYA KELOMPOK
     let teksDetailFisik = "";
     if (filteredKhusus.length > 0) {
         teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS & TAKZIRAN TAMBAHAN):\n\n`;
@@ -1084,7 +1088,6 @@
         for (let kat in grupKategori) {
             let g = grupKategori[kat];
             
-            // Menyusun teks takziran membaca tambahan (jika diinput manual oleh pengurus)
             let teksBacaanManual = "-";
             if (g.jumlahBaca > 0) {
                 teksBacaanManual = `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}`;
@@ -1104,7 +1107,7 @@
 
     teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
     document.getElementById('konten-surat').innerText = teksSuratTerpilih;
-        }
+}
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
     }
