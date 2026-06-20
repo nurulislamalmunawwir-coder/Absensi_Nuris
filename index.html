@@ -407,16 +407,18 @@
             <strong>Total Takziran Terhitung:</strong><br><span id="totalTakziranText" style="font-size:16px; color:#d63031;">-</span>
         </div>
         <div class="action-buttons">
-            <button class="btn-danger" onclick="tutupModalDetail()" style="flex:1;">Tutup</button>
-            <button class="btn-print" onclick="cetakSuratPeringatanPDF()" style="flex:2;">🖨️ Cetak Surat Peringatan (A5)</button>
+            <button class="btn-primary btn-print" onclick="tutupModalDetail()">Tutup Detail</button>
         </div>
     </div>
 </div>
 
 <script>
-    const CLOUD_SERVER_URL = "https://script.google.com/macros/s/AKfycbwcixcUf4FC0NcEdsJvhEiSz_ZdUsU6Wfeg84XwuLn9dXQEGoRizvrM-wJdt-fRLK0ZAw/exec";
-
-    const DATA_BAWAAN_ASLI = [
+    // ==========================================
+    // DATA BAWAAN & KONSTRUKTOR DATABASE UTAMA
+    // ==========================================
+    const URL_SERVER_CLOUD = "https://script.google.com/macros/s/AKfycbwcixcUf4FC0NCEdsJvhe..."; 
+    
+    let daftarSantri = [
         {id: 1, nama: "HAFIDZ", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
         {id: 2, nama: "ILAL", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
         {id: 3, nama: "SHOHIB", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
@@ -424,710 +426,713 @@
         {id: 5, nama: "SYAIKHONI", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
         {id: 6, nama: "WASIK", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
         {id: 7, nama: "ROBIN", domisili: "A-01", kamar: "MUHAMMAD ROBIN"},
-        {id: 8, nama: "FARIS BESAR", domisili: "A-02", kamar: "MUKHLIS"},
+        {id: 8, nama: "FARISI BESAR", domisili: "A-02", kamar: "MUKHLIS"},
         {id: 9, nama: "ARDI", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 10, nama: "RISKI WAHID", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 11, nama: "WASIL", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 12, nama: "DAYAT", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 13, nama: "WALI", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 14, nama: "MUKHLIS", domisili: "A-02", kamar: "MUKHLIS"},
-        {id: 15, nama: "FAUZAN", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 16, nama: "RAHMAT", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 17, nama: "ALFIN", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 18, nama: "REHAN", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 19, nama: "RISKI WADUD", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 20, nama: "JUNAIDI", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 21, nama: "ARIF", domisili: "A-03", kamar: "FAUZAN"},
-        {id: 22, nama: "AGUS", domisili: "B-01", kamar: "SOBIRIN"},
-        {id: 23, nama: "ILZAM", domisili: "B-01", kamar: "SOBIRIN"},
-        {id: 24, nama: "WAHYU", domisili: "B-01", kamar: "SOBIRIN"},
-        {id: 25, nama: "SOBIRIN", domisili: "B-01", kamar: "SOBIRIN"},
-        {id: 26, nama: "ROSI", domisili: "B-01", kamar: "SOBIRIN"},
-        {id: 27, nama: "ZIDAN", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 28, nama: "FENDY", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 29, nama: "FARIS KECIL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 30, nama: "FAREL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 31, nama: "SOIM MUKHTAR", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 32, nama: "HUMAM", domisili: "B-03", kamar: "ROFIQI"},
-        {id: 33, nama: "SUHAIMI", domisili: "B-03", kamar: "ROFIQI"},
-        {id: 34, nama: "ROFIQI", domisili: "B-03", kamar: "ROFIQI"},
-        {id: 35, nama: "RIZAL", domisili: "B-02", kamar: "SOIM MUKHTAR"},
-        {id: 36, nama: "ISKANDAR", domisili: "B-03", kamar: "ROFIQI"}
+        {id: 10, nama: "RISKI WAHID", domisili: "A-02", kamar: "MUKHLIS"}
     ];
 
-    const KEGIATAN_DEFAULT = ["Salat Subuh", "Salat Dzuhur", "Salat Asar", "Salat Magrib", "Salat Isya", "Shalat Duha", "Apel Pagi", "Ngaji Ba'da Maghrib", "Ngaji Ba'da Dzuhur"];
-    
-    let daftarSantri = [...DATA_BAWAAN_ASLI];
-    let daftarKegiatan = [...KEGIATAN_DEFAULT];
-    let databaseAbsen = {};
-    let databaseKhusus = [];
-    let globalPelanggarAbsen = [];
-    let santriTerpilihDetail = null;
-    let teksSuratTerpilih = "";
+    let daftarKegiatan = ["Madrasah Diniyah", "Pengajian Kitab", "Sholat Jamaah"];
+    let databaseAbsen = {};   
+    let databaseKhusus = [];  
+    let globalPelanggarAbsen = []; 
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const hariIni = new Date().toISOString().slice(0, 10);
+    // ==========================================
+    // SISTEM INI RUNNING PERTAMA KALI (INIT)
+    // ==========================================
+    window.onload = function() {
+        let hariIni = new Date().toISOString().slice(0, 10);
         document.getElementById('absen-tanggal').value = hariIni;
         document.getElementById('rekap-dari').value = hariIni;
         document.getElementById('rekap-sampai').value = hariIni;
-        
-        loadDataOfflineLokal();
-        tarikDataDariCloud(false); 
-    });
 
-    function showLoading(status) {
-        document.getElementById('loading-overlay').style.display = status ? "flex" : "none";
+        muatDataOfflineLokal();
+        initDropdownDanTabel();
+    };
+
+    function initDropdownDanTabel() {
+        let selKeg = document.getElementById('absen-kegiatan');
+        if(selKeg) {
+            selKeg.innerHTML = "";
+            daftarKegiatan.forEach(k => selKeg.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+
+        let selSantri = document.getElementById('khusus-santri');
+        if(selSantri) {
+            selSantri.innerHTML = "";
+            daftarSantri.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
+                selSantri.innerHTML += `<option value="${s.nama}">${s.nama} (${s.domisili})</option>`;
+            });
+        }
+
+        renderTabelAbsen();
+        renderPelanggaranKhusus();
+        renderPengaturanTab();
     }
 
     function switchTab(tabId) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
+        
+        let targetPanel = document.getElementById(tabId);
+        if(targetPanel) targetPanel.classList.add('active');
+        
         if(event && event.currentTarget) event.currentTarget.classList.add('active');
+
+        if(tabId === 'tab-pengaturan') renderPengaturanTab();
     }
 
-    function loadDataOfflineLokal() {
-        let s = localStorage.getItem('NURIS_CLOUD_daftarSantri');
-        if(s) daftarSantri = JSON.parse(s);
-        let k = localStorage.getItem('NURIS_CLOUD_daftarKegiatan');
-        if(k) daftarKegiatan = JSON.parse(k);
-        let a = localStorage.getItem('NURIS_CLOUD_databaseAbsen');
-        if(a) databaseAbsen = JSON.parse(a);
-        let p = localStorage.getItem('NURIS_CLOUD_databaseKhusus');
-        if(p) databaseKhusus = JSON.parse(p);
-
-        refreshSemuaTampilanLayar();
+    // ==========================================
+    // CORE SINKRONISASI OFFLINE-ONLINE ANTI-GAGAL
+    // ==========================================
+    function muatDataOfflineLokal() {
+        if(localStorage.getItem('NURIS_daftarSantri')) daftarSantri = JSON.parse(localStorage.getItem('NURIS_daftarSantri'));
+        if(localStorage.getItem('NURIS_daftarKegiatan')) daftarKegiatan = JSON.parse(localStorage.getItem('NURIS_daftarKegiatan'));
+        if(localStorage.getItem('NURIS_databaseAbsen')) databaseAbsen = JSON.parse(localStorage.getItem('NURIS_databaseAbsen'));
+        if(localStorage.getItem('NURIS_databaseKhusus')) databaseKhusus = JSON.parse(localStorage.getItem('NURIS_databaseKhusus'));
     }
 
     function simpanDataOfflineLokal() {
-        localStorage.setItem('NURIS_CLOUD_daftarSantri', JSON.stringify(daftarSantri));
-        localStorage.setItem('NURIS_CLOUD_daftarKegiatan', JSON.stringify(daftarKegiatan));
-        localStorage.setItem('NURIS_CLOUD_databaseAbsen', JSON.stringify(databaseAbsen));
-        localStorage.setItem('NURIS_CLOUD_databaseKhusus', JSON.stringify(databaseKhusus));
+        localStorage.setItem('NURIS_daftarSantri', JSON.stringify(daftarSantri));
+        localStorage.setItem('NURIS_daftarKegiatan', JSON.stringify(daftarKegiatan));
+        localStorage.setItem('NURIS_databaseAbsen', JSON.stringify(databaseAbsen));
+        localStorage.setItem('NURIS_databaseKhusus', JSON.stringify(databaseKhusus));
     }
 
-    function refreshSemuaTampilanLayar() {
-        renderDropdownKegiatan();
-        renderTabelAbsen();
-        renderDropdownSantriPusat();
-        renderPelanggaranKhusus();
-        renderTabelKelolaKegiatan();
-        renderTabelKelolaSantri();
-    }
-
-    function renderDropdownKegiatan() {
-        let sel = document.getElementById('absen-kegiatan');
-        let valSebelumnya = sel.value;
-        sel.innerHTML = "";
-        daftarKegiatan.forEach(kg => {
-            let op = document.createElement('option'); op.value = kg; op.text = kg; sel.add(op);
-        });
-        if(valSebelumnya && daftarKegiatan.includes(valSebelumnya)) sel.value = valSebelumnya;
-    }
-
-    // ==========================================
-    // SINKRONISASI AMBIL DATA CLOUD
-    // ==========================================
-    function tarikDataDariCloud(alertSukses = false) {
-        showLoading(true);
-        fetch(CLOUD_SERVER_URL)
-        .then(res => res.json())
-        .then(data => {
-            if(data.daftarSantri) daftarSantri = data.daftarSantri;
-            if(data.daftarKegiatan) daftarKegiatan = data.daftarKegiatan;
-            if(data.databaseAbsen) databaseAbsen = data.databaseAbsen;
-            if(data.databaseKhusus) databaseKhusus = data.databaseKhusus;
-
-            simpanDataOfflineLokal();
-            refreshSemuaTampilanLayar();
-            showLoading(false);
-            if(alertSukses) alert("✅ Sinkronisasi Berhasil! Data HP sama dengan Cloud server pusat.");
-        })
-        .catch(err => {
-            showLoading(false);
-            console.log("Mode Offline aktif.");
-            if(alertSukses) alert("⚠️ Gagal terhubung ke Cloud. Sinyal bermasalah.");
-        });
-    }
-
-    function renderTabelAbsen() {
-        let container = document.getElementById('container-kartu-absen');
-        container.innerHTML = "";
-        let tgl = document.getElementById('absen-tanggal').value;
-        let keg = document.getElementById('absen-kegiatan').value;
-        let keyDB = tgl + '_' + keg;
-        let dataHariIni = databaseAbsen[keyDB] || {};
-
-        daftarSantri.forEach(function(santri) {
-            let statusNow = dataHariIni[santri.id] || "H"; 
-            let indicatorClass = "hadir";
-            if(statusNow === 'A') indicatorClass = "alpa";
-            else if(statusNow === 'I') indicatorClass = "izin";
-            else if(statusNow === 'S') indicatorClass = "sakit";
-            else if(statusNow === 'T') indicatorClass = "telat";
-            else if(statusNow === 'K') indicatorClass = "keluar";
-            else if(statusNow === 'P') indicatorClass = "pulang";
-
-            let item = document.createElement('div');
-            item.className = 'absen-item';
-            item.setAttribute('data-search', santri.nama.toLowerCase());
-            
-            let headerHtml = `<div class="absen-header" onclick="toggleAbsenBody(this)">
-                <div class="absen-nama-text">${santri.nama}</div>
-                <div class="absen-status-indicator ${indicatorClass}" id="ind-${santri.id}">${statusNow}</div>
-            </div>`;
-            
-            let optionsHtml = `<div class="absen-body"><div class="status-grid-compact">`;
-            const statuses = [
-                {code:'H', cls:'sl-h'}, {code:'A', cls:'sl-a'}, {code:'I', cls:'sl-i'},
-                {code:'S', cls:'sl-s'}, {code:'T', cls:'sl-t'}, {code:'K', cls:'sl-k'},
-                {code:'P', cls:'sl-p'}
-            ];
-
-            statuses.forEach(st => {
-                let checked = (statusNow === st.code) ? "checked" : "";
-                let selectedClass = (statusNow === st.code) ? "selected" : "";
-                optionsHtml += `
-                    <label class="status-label ${st.cls} ${selectedClass}" onclick="pilihStatus('${santri.id}', '${st.code}', this)">
-                        <input type="radio" name="s-${santri.id}" value="${st.code}" ${checked}>
-                        ${st.code}
-                    </label>`;
-            });
-            optionsHtml += `</div></div></div>`;
-            item.innerHTML = headerHtml + optionsHtml;
-            container.appendChild(item);
-        });
-    }
-
-    function toggleAbsenBody(headerEl) {
-        let body = headerEl.nextElementSibling;
-        let isOpen = body.classList.contains('show');
-        document.querySelectorAll('.absen-body').forEach(b => b.classList.remove('show'));
-        document.querySelectorAll('.absen-header').forEach(h => h.classList.remove('active'));
-        if (!isOpen) {
-            body.classList.add('show');
-            headerEl.classList.add('active');
-        }
-    }
-
-    function pilihStatus(santriId, code, labelEl) {
-        let parentGrid = labelEl.parentElement;
-        parentGrid.querySelectorAll('.status-label').forEach(l => l.classList.remove('selected'));
-        labelEl.classList.add('selected');
-        labelEl.querySelector('input').checked = true;
+    function tarikDataDariCloud(manualClick) {
+        document.getElementById('loading-overlay').style.display = "flex";
         
-        let indicator = document.getElementById('ind-' + santriId);
-        indicator.innerText = code;
-        indicator.className = 'absen-status-indicator';
-        if(code === 'H') indicator.classList.add('hadir');
-        else if(code === 'A') indicator.classList.add('alpa');
-        else if(code === 'I') indicator.classList.add('izin');
-        else if(code === 'S') indicator.classList.add('sakit');
-        else if(code === 'T') indicator.classList.add('telat');
-        else if(code === 'K') indicator.classList.add('keluar');
-        else if(code === 'P') indicator.classList.add('pulang');
-    }
-
-    function filterSantriAbsen() {
-        let input = document.getElementById('search-santri').value.toLowerCase();
-        let items = document.getElementsByClassName('absen-item');
-        for (let i = 0; i < items.length; i++) {
-            let searchData = items[i].getAttribute('data-search');
-            items[i].style.display = searchData.includes(input) ? "" : "none";
-        }
-    }
-
-    function simpanAbsenMekanismeHybrid() {
-        let tgl = document.getElementById('absen-tanggal').value;
-        let keg = document.getElementById('absen-kegiatan').value;
-        if(!tgl || !keg) return alert("Pilih tanggal & kegiatan!");
-
-        let keyDB = tgl + '_' + keg;
-        if(!databaseAbsen[keyDB]) databaseAbsen[keyDB] = {};
-        
-        daftarSantri.forEach(s => {
-            let el = document.querySelector(`input[name="s-${s.id}"]:checked`);
-            if(el) databaseAbsen[keyDB][s.id] = el.value;
-        });
-
-        simpanDataOfflineLokal();
-        dorongDatabaseKeCloudServer("Data Absensi Berhasil Disimpan!");
-    }
-
-    function simpanPelanggaranKhususMekanismeHybrid() {
-        let nm = document.getElementById('khusus-santri').value;
-        let katSelect = document.getElementById('khusus-kategori').value;
-        let katFinal = (katSelect === 'LAINNYA') ? document.getElementById('input-kategori-text').value.toUpperCase() : katSelect;
-        if(!katFinal) return alert("Isi kategori pelanggaran!");
-        let jml = parseInt(document.getElementById('khusus-jumlah-mengaji').value);
-        let tip = document.getElementById('khusus-tipe-mengaji').value;
-        let fis = document.getElementById('khusus-tugas-fisik').value;
-        if(!fis) return alert("Isi tugas fisik!");
-        
-        let tgl = new Date().toISOString().slice(0,10);
-        databaseKhusus.push({nama: nm, kategori: katFinal, jumlah: jml, tipe: tip, fisik: fis, tanggal: tgl});
-
-        document.getElementById('khusus-tugas-fisik').value = "";
-        document.getElementById('khusus-jumlah-mengaji').value = "1";
-        document.getElementById('input-kategori-text').value = "";
-        document.getElementById('box-kategori-manual').style.display = "none";
-        
-        simpanDataOfflineLokal();
-        renderPelanggaranKhusus();
-        dorongDatabaseKeCloudServer("Pelanggaran Khusus Berhasil Tersimpan!");
-    }
-
-    function hapusPelKhusus(i) { 
-        if(confirm("Hapus pelanggaran ini dari Server?")) { 
-            databaseKhusus.splice(i,1); 
-            simpanDataOfflineLokal();
-            renderPelanggaranKhusus();
-            dorongDatabaseKeCloudServer("Pelanggaran Berhasil Dihapus!");
-        }
-    }
-
-    // ==========================================
-    // KELOLA KEGIATAN & DATA SANTRI (FITUR BARU)
-    // ==========================================
-    function tambahJenisKegiatanDinamisCloud() {
-        let namaBaru = document.getElementById('input-kegiatan-baru').value.trim();
-        if (!namaBaru) return alert("Ketik nama kegiatannya!");
-        if (daftarKegiatan.includes(namaBaru)) return alert("Kegiatan sudah ada!");
-        
-        daftarKegiatan.push(namaBaru);
-        document.getElementById('input-kegiatan-baru').value = "";
-        
-        simpanDataOfflineLokal();
-        refreshSemuaTampilanLayar();
-        dorongDatabaseKeCloudServer("Kegiatan Baru Berhasil Ditambahkan!");
-    }
-
-    function hapusJenisKegiatanCloud(idx) {
-        if(confirm(`Hapus jenis kegiatan "${daftarKegiatan[idx]}" dari Server Pusat?`)) {
-            daftarKegiatan.splice(idx, 1);
-            simpanDataOfflineLokal();
-            refreshSemuaTampilanLayar();
-            dorongDatabaseKeCloudServer("Kegiatan Berhasil Dihapus!");
-        }
-    }
-
-    function renderTabelKelolaKegiatan() {
-        let body = document.getElementById('preview-tabel-kegiatan');
-        body.innerHTML = "";
-        daftarKegiatan.forEach((keg, idx) => {
-            body.innerHTML += `<tr>
-                <td style="text-align:left; padding-left:10px; font-size:11px;"><b>${keg}</b></td>
-                <td><button class="btn-danger" style="padding:4px 8px; font-size:9px; width:auto;" onclick="hapusJenisKegiatanCloud(${idx})">Hapus</button></td>
-            </tr>`;
-        });
-    }
-
-    function tambahSantriBaruMekanismeHybrid() {
-        let n = document.getElementById('manual-nama').value.toUpperCase().trim();
-        let d = document.getElementById('manual-domisili').value.trim();
-        let k = document.getElementById('manual-kamar').value.trim();
-        if(n && d && k) {
-            let id = daftarSantri.length > 0 ? Math.max(...daftarSantri.map(x=>x.id))+1 : 1;
-            daftarSantri.push({id:id, nama:n, domisili:d, kamar:k});
-            
-            document.getElementById('manual-nama').value = "";
-            document.getElementById('manual-domisili').value = "";
-            document.getElementById('manual-kamar').value = "";
-            
-            simpanDataOfflineLokal();
-            refreshSemuaTampilanLayar();
-            dorongDatabaseKeCloudServer("Santri Baru Berhasil Ditambahkan!");
-        } else {
-            alert("Harap lengkapi seluruh form!");
-        }
-    }
-
-    function hapusSantriCloud(idSantri, namaSantri) {
-        if(confirm(`⚠️ Apakah Anda yakin ingin MENGHAPUS santri bernama "${namaSantri}"? Data riwayat lamanya tidak akan hilang, namun namanya tidak akan masuk daftar absen lagi.`)) {
-            daftarSantri = daftarSantri.filter(s => s.id !== idSantri);
-            simpanDataOfflineLokal();
-            refreshSemuaTampilanLayar();
-            dorongDatabaseKeCloudServer(`Santri bernama ${namaSantri} berhasil dihapus dari sistem!`);
-        }
-    }
-
-    function renderTabelKelolaSantri() {
-        let body = document.getElementById('preview-tabel-santri');
-        body.innerHTML = "";
-        daftarSantri.forEach(s => {
-            body.innerHTML += `<tr>
-                <td style="text-align:left; font-size:12px; padding: 4px;"><b>${s.nama}</b></td>
-                <td style="font-size:11px; color:#555;">${s.domisili}</td>
-                <td><button class="btn-danger" style="padding:3px 6px; font-size:9px; width:auto;" onclick="hapusSantriCloud(${s.id}, '${s.nama}')">Hapus</button></td>
-            </tr>`;
-        });
-    }
-
-    function resetServerCloudKeBawaanAwal() {
-        if(confirm("⚠️ PERINGATAN: Menghapus SELURUH catatan di server dan internal HP. Lanjutkan?")) {
-            daftarSantri = [...DATA_BAWAAN_ASLI];
-            daftarKegiatan = [...KEGIATAN_DEFAULT];
-            databaseAbsen = {};
-            databaseKhusus = [];
-            simpanDataOfflineLokal();
-            dorongDatabaseKeCloudServer("Seluruh Server & HP Berhasil Bersih Direset!");
-        }
-    }
-
-    // PENDORONG DATA GLOBAL
-    function dorongDatabaseKeCloudServer(teksAlertSukses) {
-        showLoading(true);
-        let paketLengkap = {
+        let payload = {
             daftarSantri: daftarSantri,
             daftarKegiatan: daftarKegiatan,
             databaseAbsen: databaseAbsen,
             databaseKhusus: databaseKhusus
         };
 
-        fetch(CLOUD_SERVER_URL, {
+        fetch(URL_SERVER_CLOUD, {
             method: 'POST',
             mode: 'no-cors', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paketLengkap)
+            body: JSON.stringify(payload)
         })
         .then(() => {
-            showLoading(false);
-            alert("✅ " + teksAlertSukses + " (Tersinkronisasi Online)");
-            tarikDataDariCloud(false); 
+            document.getElementById('loading-overlay').style.display = "none";
+            simpanDataOfflineLokal();
+            if(manualClick) alert("Sinkronisasi Berhasil! Seluruh data offline HP disatukan di Google Sheets Cloud.");
+            initDropdownDanTabel();
+            if(document.getElementById('tabel-rekap').style.display === "table") prosesRekap();
         })
         .catch(err => {
-            showLoading(false);
-            alert("⚠️ Tersimpan OFFLINE! Sinyal internetmu terputus. Klik tombol 'Sinkron Cloud' di atas saat jaringan kembali.");
+            document.getElementById('loading-overlay').style.display = "none";
+            alert("Koneksi Internet Lemah! Data gagal diunggah, tapi TENANG data Anda TETAP AMAN tersimpan di HP. Silakan coba saat sinyal stabil.");
+            console.error(err);
+        });
+    }// ==========================================
+    // MODUL TAB ABSENSI & KARTU DINAMIS
+    // ==========================================
+    function renderTabelAbsen() {
+        let tgl = document.getElementById('absen-tanggal').value;
+        let keg = document.getElementById('absen-kegiatan').value;
+        let container = document.getElementById('container-kartu-absen');
+        if(!container) return;
+        container.innerHTML = "";
+
+        if(!tgl || !keg) return;
+        let key = tgl + "_" + keg;
+        if(!databaseAbsen[key]) databaseAbsen[key] = {};
+
+        daftarSantri.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
+            let currentStatus = databaseAbsen[key][s.id] || "H"; 
+            
+            let cls = "hadir";
+            if(currentStatus === "A") cls = "alpa";
+            if(currentStatus === "T") cls = "telat";
+            if(currentStatus === "I") cls = "izin";
+            if(currentStatus === "S") cls = "sakit";
+            if(currentStatus === "K") cls = "keluar";
+            if(currentStatus === "P") cls = "pulang";
+
+            let item = document.createElement('div');
+            item.className = "absen-item";
+            item.innerHTML = `
+                <div class="absen-header" id="head-${s.id}" onclick="toggleExpandKartu(${s.id})">
+                    <span class="absen-nama-text">${s.nama} <span style="font-size:10px; color:#888; font-weight:normal;">(${s.domisili})</span></span>
+                    <span class="absen-status-indicator ${cls}" id="badge-${s.id}">${currentStatus === 'H' ? 'HADIR' : currentStatus}</span>
+                </div>
+                <div class="absen-body" id="body-${s.id}">
+                    <div class="status-grid-compact">
+                        <div class="status-label sl-h ${currentStatus==='H'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'H')">H</div>
+                        <div class="status-label sl-a ${currentStatus==='A'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'A')">A</div>
+                        <div class="status-label sl-t ${currentStatus==='T'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'T')">T</div>
+                        <div class="status-label sl-i ${currentStatus==='I'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'I')">I</div>
+                        <div class="status-label sl-s ${currentStatus==='S'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'S')">S</div>
+                        <div class="status-label sl-k ${currentStatus==='K'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'K')">K</div>
+                        <div class="status-label sl-p ${currentStatus==='P'?'selected':''}" onclick="pilihStatusAbsen(${s.id}, 'P')">P</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
         });
     }
 
+    function toggleExpandKartu(id) {
+        let b = document.getElementById('body-' + id);
+        let h = document.getElementById('head-' + id);
+        if(!b || !h) return;
+        let statusSekarang = b.classList.contains('show');
+        
+        document.querySelectorAll('.absen-body').forEach(el => el.classList.remove('show'));
+        document.querySelectorAll('.absen-header').forEach(el => el.classList.remove('active'));
+
+        if(!statusSekarang) {
+            b.classList.add('show');
+            h.classList.add('active');
+        }
+    }
+
+    function pilihStatusAbsen(santriId, statusKode) {
+        let tgl = document.getElementById('absen-tanggal').value;
+        let keg = document.getElementById('absen-kegiatan').value;
+        let key = tgl + "_" + keg;
+
+        databaseAbsen[key][santriId] = statusKode;
+
+        let badge = document.getElementById('badge-' + santriId);
+        if(badge) {
+            badge.className = "absen-status-indicator " + (statusKode==='H'?'hadir':statusKode==='A'?'alpa':statusKode==='T'?'telat':statusKode==='I'?'izin':statusKode==='S'?'sakit':statusKode==='K'?'keluar':'pulang');
+            badge.innerText = statusKode === 'H' ? 'HADIR' : statusKode;
+        }
+
+        let parent = document.getElementById('body-' + santriId);
+        if(parent) {
+            parent.querySelectorAll('.status-label').forEach(el => el.classList.remove('selected'));
+            if(event && event.currentTarget) event.currentTarget.classList.add('selected');
+        }
+    }
+
+    function filterSantriAbsen() {
+        let q = document.getElementById('search-santri').value.toUpperCase();
+        let items = document.querySelectorAll('.absen-item');
+        items.forEach(it => {
+            let nama = it.querySelector('.absen-nama-text').innerText.toUpperCase();
+            it.style.display = nama.includes(q) ? "block" : "none";
+        });
+    }
+
+    function simpanAbsenMekanismeHybrid() {
+        simpanDataOfflineLokal();
+        alert("Data Absensi berhasil dikunci offline di memori HP! Jangan lupa klik 'Sinkron Cloud' jika mendapat sinyal internet.");
+                                                        }
+      
+    // ==========================================
+    // MODUL TAB INPUT & MANAGEMEN PELANGGARAN KHUSUS
+    // ==========================================
     function cekKategoriManual() {
-        let cat = document.getElementById('khusus-kategori').value;
-        document.getElementById('box-kategori-manual').style.display = (cat === 'LAINNYA') ? "block" : "none";
+        let v = document.getElementById('khusus-kategori').value;
+        let box = document.getElementById('box-kategori-manual');
+        if(box) box.style.display = (v === 'LAINNYA') ? 'block' : 'none';
+    }
+
+    function simpanPelanggaranKhususMekanismeHybrid() {
+        let nm = document.getElementById('khusus-santri').value;
+        let katSelect = document.getElementById('khusus-kategori').value;
+        let katFinal = katSelect === 'LAINNYA' ? document.getElementById('input-kategori-text').value : katSelect;
+        
+        if(!katFinal || !katFinal.trim()) return alert("Harap masukkan atau pilih kategori pelanggaran santri!");
+        
+        let jml = parseInt(document.getElementById('khusus-jumlah-mengaji').value) || 1;
+        let tip = document.getElementById('khusus-tipe-mengaji').value;
+        let fis = document.getElementById('khusus-tugas-fisik').value;
+        let tgl = new Date().toISOString().slice(0, 10);
+
+        databaseKhusus.push({
+            nama: nm,
+            kategori: katFinal,
+            jumlah: jml,
+            tipe: tip,
+            fisik: fis,
+            tanggal: tgl,
+            status: "Belum" 
+        });
+
+        document.getElementById('khusus-tugas-fisik').value = "";
+        document.getElementById('input-kategori-text').value = "";
+        document.getElementById('khusus-kategori').value = "Merokok";
+        cekKategoriManual();
+
+        simpanDataOfflineLokal();
+        renderPelanggaranKhusus();
+        alert("Pelanggaran khusus sukses tercatat!");
     }
 
     function renderPelanggaranKhusus() {
-        let c = document.getElementById('list-pelanggaran-khusus'); c.innerHTML = "";
-        databaseKhusus.forEach((p,i) => {
-            c.innerHTML += `<div style="border-left:3px solid #dc3545; padding:8px; margin-bottom:6px; background:white; border:1px solid #eee; border-left-width:3px;">
-                <b style="font-size:12px;">${p.nama}</b> <span style="font-size:10px; color:#6c757d;">(${p.kategori})</span> 
-                <button onclick="hapusPelKhusus(${i})" style="float:right;width:auto;padding:2px 6px;font-size:9px;" class="btn-danger">Hapus</button><br>
-                <small style="font-size:10px; color:#495057;">+${p.jumlah} ${p.tipe} | Tugas: ${p.fisik}</small>
-            </div>`;
+        let container = document.getElementById('list-pelanggaran-khusus');
+        if(!container) return;
+        container.innerHTML = "";
+
+        if(databaseKhusus.length === 0) {
+            container.innerHTML = "<p style='color:#777; font-size:11px; text-align:center;'>Belum ada catatan pelanggaran khusus.</p>";
+            return;
+        }
+
+        databaseKhusus.forEach((pk, idx) => {
+            let statusBadge = pk.status === "Selesai" 
+                ? `<span style="background:#28a745; color:white; padding:2px 5px; border-radius:3px; font-size:9px;">LUNAS</span>` 
+                : `<span style="background:#dc3545; color:white; padding:2px 5px; border-radius:3px; font-size:9px;">BELUM TAKZIRAN</span>`;
+
+            container.innerHTML += `
+                <div style="background:white; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:6px; position:relative;">
+                    <strong style="color:#2c3e50;">${pk.nama}</strong> [${statusBadge}]<br>
+                    <span style="font-size:11px; color:#555;">Pelanggaran: <b>${pk.kategori}</b> (${pk.tanggal})</span><br>
+                    <span style="font-size:11px; color:#1e3799;">Sanksi: Baca ${pk.jumlah} ${pk.tipe} ${pk.fisik ? ' & Fisik: ' + pk.fisik : ''}</span>
+                    
+                    <div style="margin-top:8px; display:flex; gap:5px; justify-content:flex-end;">
+                        ${pk.status !== 'Selesai' ? `<button style="width:auto; font-size:10px; padding:3px 8px; background:#28a745; color:white;" onclick="centangSelesaiTakziran('${pk.nama}', 'khusus', '${pk.kategori}', '${pk.tanggal}')">✓ Lunas</button>` : ''}
+                        <button style="width:auto; font-size:10px; padding:3px 8px; background:#dc3545; color:white;" onclick="hapusPelanggaranKhususKlik(${idx})">Hapus</button>
+                    </div>
+                </div>
+            `;
         });
     }
 
-    function renderDropdownSantriPusat() {
-        let s = document.getElementById('khusus-santri'); s.innerHTML="";
-        daftarSantri.forEach(d => { let o=document.createElement('option'); o.value=d.nama; o.text=d.nama; s.add(o); });
+    function hapusPelanggaranKhususKlik(idx) {
+        if(confirm("Apakah Anda yakin ingin menghapus data pelanggaran ini selamanya?")) {
+            databaseKhusus.splice(idx, 1);
+            simpanDataOfflineLokal();
+            renderPelanggaranKhusus();
+        }
     }
 
-    // REKAP & SURAT PERINGATAN A5
+    // ==========================================
+    // MESIN UTAMA CHECKLIST / CENTANG LUNAS TAKZIRAN
+    // ==========================================
+    function centangSelesaiTakziran(namaSantri, tipePelanggaran, infoKategori, tglUnik) {
+        let msg = `Apakah benar santri atas nama ${namaSantri} telah melaksanakan & lunas kewajiban takzirannya?`;
+        
+        if (confirm(msg)) {
+            if (tipePelanggaran === 'absen') {
+                globalPelanggarAbsen.forEach(p => {
+                    if (p.nama === namaSantri) p.status = "Selesai";
+                });
+                
+                for (let key in databaseAbsen) {
+                    let sFound = daftarSantri.find(ds => ds.nama === namaSantri);
+                    if(sFound && databaseAbsen[key][sFound.id] && databaseAbsen[key][sFound.id] !== 'H') {
+                        if(!databaseAbsen[key].lunasSantriIds) databaseAbsen[key].lunasSantriIds = [];
+                        if(!databaseAbsen[key].lunasSantriIds.includes(sFound.id)) {
+                            databaseAbsen[key].lunasSantriIds.push(sFound.id);
+                        }
+                    }
+                }
+            } else if (tipePelanggaran === 'khusus') {
+                databaseKhusus.forEach(pk => {
+                    if (pk.nama === namaSantri && pk.kategori === infoKategori && pk.tanggal === tglUnik) {
+                        pk.status = "Selesai";
+                    }
+                });
+            }
+
+            simpanDataOfflineLokal();
+            pilihModelSurat('gabungan');
+            renderPelanggaranKhusus();
+            prosesRekap();
+            alert(`Alhamdulillah, takziran ${namaSantri} terhitung LUNAS. Data otomatis dikeluarkan dari rekap maklumat aktif!`);
+        }
+    }
+// ==========================================
+    // MODUL TAB REKAP & KOREKSI MATEMATIKA SANKSI
+    // ==========================================
     function prosesRekap() {
         let d1 = document.getElementById('rekap-dari').value;
         let d2 = document.getElementById('rekap-sampai').value;
-        if(!d1 || !d2) return alert("Pilih tanggal!");
-
-        let rA = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
-        let rT = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
-        let rK = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
-        let rP = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
-
         let tbody = document.getElementById('body-rekap');
+        
+        if(!d1 || !d2) return alert("Tentukan rentang tanggal rekapitulasi pekanan!");
+        
         tbody.innerHTML = "";
         globalPelanggarAbsen = [];
 
+        let susunanHitung = {};
         daftarSantri.forEach(s => {
-            let A=0,I=0,S=0,T=0,K=0,P=0;
-            for(let key in databaseAbsen) {
-                let tglKey = key.split("_")[0];
-                if(tglKey >= d1 && tglKey <= d2) {
-                    let st = databaseAbsen[key][s.id];
-                    if(st==='A') A++; else if(st==='I') I++; else if(st==='S') S++;
-                    else if(st==='T') T++; else if(st==='K') K++; else if(st==='P') P++;
-                }
-            }
-            let punyaKhusus = databaseKhusus.some(pk => pk.nama === s.nama && pk.tanggal >= d1 && pk.tanggal <= d2);
-            let totalLbr = (A*rA) + (T*rT) + (K*rK) + (P*rP);
-            let juz = Math.floor(totalLbr/10);
-            let sisa = totalLbr%10;
-            let txt = totalLbr>0 ? (juz>0?juz+' Juz ':'')+(sisa>0?sisa+' Lbr':'') : "-";
-
-            if(A>0 || I>0 || S>0 || T>0 || K>0 || P>0 || punyaKhusus) {
-                tbody.innerHTML += `<tr onclick="bukaModalDetailSantri('${s.nama}')" style="cursor:pointer;">
-                    <td style="text-align:left;"><b>${s.nama}</b></td>
-                    <td>${A}</td><td>${I}</td><td>${S}</td><td>${T}</td><td>${K}</td><td>${P}</td>
-                    <td>${txt}</td>
-                </tr>`;
-                globalPelanggarAbsen.push({nama:s.nama, A:A, I:I, S:S, T:T, K:K, P:P, txt:txt});
-            }
+            susunanHitung[s.id] = { id: s.id, nama: s.nama, domisili: s.domisili, A:0, I:0, S:0, T:0, K:0, P:0, status: "Belum" };
         });
 
-        if(globalPelanggarAbsen.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='8' style='padding:15px;'>Tidak ada data indisipliner pada periode ini.</td></tr>";
+        for (let key in databaseAbsen) {
+            let tglKey = key.split("_")[0];
+            if (tglKey >= d1 && tglKey <= d2) {
+                let logLunasIds = databaseAbsen[key].lunasSantriIds || [];
+                
+                daftarSantri.forEach(s => {
+                    if(logLunasIds.includes(s.id)) return;
+
+                    let st = databaseAbsen[key][s.id];
+                    if (st && st !== 'H' && susunanHitung[s.id]) {
+                        susunanHitung[s.id][st]++;
+                    }
+                });
+            }
         }
+
+        let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value) || 0;
+        let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value) || 0;
+        let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value) || 0;
+        let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value) || 0;
+        let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value) || 0;
+
+        for (let id in susunanHitung) {
+            let p = susunanHitung[id];
+            if (p.A > 0 || p.T > 0 || p.K > 0 || p.P > 0 || p.I > 0 || p.S > 0) {
+                globalPelanggarAbsen.push(p);
+            }
+        }
+
+        if (globalPelanggarAbsen.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="padding:15px; color:#777;">Tidak ditemukan data pelanggaran dalam rentang periode ini.</td></tr>`;
+        } else {
+            globalPelanggarAbsen.forEach(p => {
+                let totLbr = (p.A * rA_M) + (p.T * rT_M) + (p.K * rK_M) + (p.P * rP_M);
+                
+                let filteredKhusus = databaseKhusus.filter(pk => pk.nama === p.nama && pk.tanggal >= d1 && pk.tanggal <= d2 && pk.status !== "Selesai");
+                filteredKhusus.forEach(pk => {
+                    let konv = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
+                    totLbr += konv;
+                });
+
+                let hitungJuz = Math.floor(totLbr / 10);
+                let hitungSisaLbr = totLbr % 10;
+                let teksMengaji = "-";
+                if(hitungJuz > 0 && hitungSisaLbr > 0) teksMengaji = `${hitungJuz} Juz & ${hitungSisaLbr} Lbr`;
+                else if(hitungJuz > 0) teksMengaji = `${hitungJuz} Juz`;
+                else if(hitungSisaLbr > 0) teksMengaji = `${hitungSisaLbr} Lbr`;
+
+                let totalSholat = p.A * rA_S;
+                let teksSholat = totalSholat > 0 ? `<br><span style="color:#d63031;">${totalSholat} Rkt Sholat</span>` : "";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="text-align:left; font-weight:bold; padding:6px;">${p.nama}</td>
+                        <td style="color:red; font-weight:bold;">${p.A}</td>
+                        <td>${p.I}</td>
+                        <td>${p.S}</td>
+                        <td style="color:orange;">${p.T}</td>
+                        <td style="color:purple;">${p.K}</td>
+                        <td style="color:blue;">${p.P}</td>
+                        <td>
+                            <div style="font-size:10px; margin-bottom:5px;">${teksMengaji}${teksSholat}</div>
+                            <div style="display:flex; gap:3px; justify-content:center;">
+                                <button style="width:auto; font-size:9px; padding:2px 5px; background:#28a745; color:white;" onclick="centangSelesaiTakziran('${p.nama}', 'absen', '', '')">✓ Lunas</button>
+                                <button style="width:auto; font-size:9px; padding:2px 5px; background:#1e3799; color:white;" onclick="bukaModalDetailSantri('${p.nama}')">🔍 Detail</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
         document.getElementById('tabel-rekap').style.display = "table";
         document.getElementById('area-surat-whatsapp').style.display = "block";
         pilihModelSurat('gabungan');
     }
 
-    function bukaModalDetailSantri(namaSantri) {
-        const santri = daftarSantri.find(s => s.nama === namaSantri);
-        if (!santri) return;
-        santriTerpilihDetail = santri;
-        document.getElementById('detailNama').innerText = santri.nama;
-        document.getElementById('detailKamar').innerText = `Kamar: ${santri.domisili} | Kepala Kamar: ${santri.kamar}`;
+    // ==========================================
+    // LOGIKA GENERATOR TEKS SURAT MAKULAT WA
+    // ==========================================
+    function pilihModelSurat(modelTipe) {
+        let d1 = document.getElementById('rekap-dari').value.split("-").reverse().join("-");
+        let d2 = document.getElementById('rekap-sampai').value.split("-").reverse().join("-");
+        
+        let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value) || 0;
+        let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value) || 0;
+        let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value) || 0;
+        let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value) || 0;
+        let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value) || 0;
 
-        const d1 = document.getElementById('rekap-dari').value;
-        const d2 = document.getElementById('rekap-sampai').value;
-        let countA = 0, countT = 0, countK = 0, countIS = 0, totalLbr = 0, totalRakaat = 0;
-        let htmlAbsen = "";
+        let head = `SURAT KETERANGAN INDISIPLINER SANTRI\n\n`;
+        let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\n` +
+            `Kami yang bertanda tangan di bawah ini, atas nama Pengurus Pondok Pesantren Nurul Islam Al-Munawwir, menyampaikan maklumat terkait kedisiplinan santri.\n\n` +
+            `Sebagaimana maqolah Sayyidina Ali bin Abi Thalib karromallahu wajhah:\n\n` +
+            `حَقٌّ بغيرِ نظامٍ يَغلِبُهُ باطِلٌ بنِظامٍ\n\n` +
+            `Tanpa sistem yang mapan, kebenaran bisa dikalahkan oleh kebatilan. Maka kami sebagai pengurus, demi menjaga ketertiban dan membiasakan kedisiplinan santri di lingkungan pesantren, menetapkan sanksi edukatif bagi nama-nama berikut. Harapannya, hal ini dapat menjadi bahan evaluasi agar santri yang bersangkutan bisa lebih disiplin di masa yang akan datang.\n\n` +
+            `Bagi nama-nama santri yang tercantum di bawah ini, mohon segera mendatangi depan dhalem sesudah kegiatan sholat Isyak untuk melaksanakan takziran:\n\n` +
+            `REKAP PELANGGARAN PEKAN INI (Periode ${d1} s/d ${d2} M):\n` +
+            `(Ketentuan Umum: Alpa = ${rA_M} Lembar Mengaji & ${rA_S} Rakaat Sholat, Telat = ${rT_M} Lembar)\n\n`;
+
+        let tglDariRaw = document.getElementById('rekap-dari').value;
+        let tglSampaiRaw = document.getElementById('rekap-sampai').value;
+        
+        let filteredKhusus = databaseKhusus.filter(pk => pk.tanggal >= tglDariRaw && pk.tanggal <= tglSampaiRaw && pk.status !== "Selesai");
+        
+        let gabunganData = {};
+
+        globalPelanggarAbsen.forEach(p => {
+            if (p.status !== "Selesai" && (p.A > 0 || p.T > 0 || p.K > 0 || p.P > 0)) {
+                if (!gabunganData[p.nama]) {
+                    gabunganData[p.nama] = { nama: p.nama, alpa: p.A, telat: p.T, keluar: p.K, pulang: p.P, khusus: [] };
+                }
+            }
+        });
+
+        filteredKhusus.forEach(pk => {
+            if (!gabunganData[pk.nama]) {
+                gabunganData[pk.nama] = { nama: pk.nama, alpa: 0, telat: 0, keluar: 0, pulang: 0, khusus: [] };
+            }
+            gabunganData[pk.nama].khusus.push(pk);
+        });
+
+        let teksDaftarSantri = "";
+        let nomor = 1;
+
+        for (let nama in gabunganData) {
+            let s = gabunganData[nama];
+            let rincianTeks = [];
+            
+            let totalLembarSemua = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
+            let totalRakaatSholat = (s.alpa * rA_S);
+            let listTugasFisik = [];
+
+            if (s.alpa > 0) rincianTeks.push(`Alpa ${s.alpa} Kali`);
+            if (s.telat > 0) rincianTeks.push(`Telat ${s.telat} Kali`);
+
+            s.khusus.forEach(pk => {
+                let teksKhusus = `${pk.kategori}`;
+                if(pk.jumlah > 0) {
+                    teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
+                    let konversiLembar = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
+                    totalLembarSemua += konversiLembar;
+                }
+                rincianTeks.push(teksKhusus);
+                
+                if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
+                    listTugasFisik.push(pk.fisik);
+                }
+            });
+
+            teksDaftarSantri += `${nomor}. ${nama}: ${rincianTeks.join(" + ")}\n`;
+
+            if (totalLembarSemua > 0) {
+                let hitungJuz = Math.floor(totalLembarSemua / 10);
+                let hitungSisaLembar = totalLembarSemua % 10;
+                let teksTotalTakziran = (hitungJuz > 0 ? `${hitungJuz} Juz ` : "") + (hitungSisaLembar > 0 ? `& ${hitungSisaLembar} Lembar` : "");
+                if(hitungJuz === 0 && hitungSisaLembar > 0) teksTotalTakziran = `${hitungSisaLembar} Lembar`;
+                teksDaftarSantri += `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
+            }
+            
+            if (totalRakaatSholat > 0) {
+                teksDaftarSantri += `   Total Takziran Sholat: ${totalRakaatSholat} Rakaat\n`;
+            }
+            
+            if (listTugasFisik.length > 0) {
+                teksDaftarSantri += `   (Kerja Fisik: ${listTugasFisik.join(" & ")})\n`;
+            }
+            
+            teksDaftarSantri += `\n`;
+            nomor++;
+        }
+
+        if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
+
+        let teksDetailFisik = "";
+        if (filteredKhusus.length > 0) {
+            teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS & TAKZIRAN TAMBAHAN):\n\n`;
+            let grupKategori = {};
+            filteredKhusus.forEach(pk => {
+                if (!grupKategori[pk.kategori]) {
+                    grupKategori[pk.kategori] = { namaSantri: [], fisik: pk.fisik, jumlahBaca: pk.jumlah, tipeBaca: pk.tipe };
+                }
+                if (!grupKategori[pk.kategori].namaSantri.includes(pk.nama)) {
+                    grupKategori[pk.kategori].namaSantri.push(pk.nama);
+                }
+            });
+
+            let noKat = 1;
+            for (let kat in grupKategori) {
+                let g = grupKategori[kat];
+                let teksBacaanManual = g.jumlahBaca > 0 ? `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}` : "-";
+                teksDetailFisik += `${noKat}. Kategori Pelanggaran: ${kat}\n` +
+                                   `   Nama Santri: ${g.namaSantri.join(", ")}\n` +
+                                   `   Takziran Membaca: ${teksBacaanManual}\n` +
+                                   `   Takziran Fisik: ${g.fisik || "-"}\n\n`;
+                noKat++;
+            }
+        }
+
+        let closing = `Besar harapan kami, maklumat ini menjadi cermin bagi santri lainnya untuk tetap istiqomah dalam kedisiplinan. Jangan sampai pelanggaran ini menjadi contoh yang diikuti, namun jadikanlah ia pelajaran berharga agar kita tidak terjerumus pada kelalaian yang sama.\n\n` +
+            `Wassalamu’alaikum Warahmatullahi Wabarakatuh.\n\n` +
+            `Pengurus Pondok Pesantren Nurul Islam Al-Munawwir`;
+
+        let areaSurat = document.getElementById('konten-surat');
+        if(areaSurat) areaSurat.innerText = teksSuratTerpilih;
+    }
+
+    function salinSuratKeClipboard() {
+        let txt = document.getElementById('konten-surat').innerText;
+        navigator.clipboard.writeText(txt).then(() => {
+            alert("Teks Maklumat Surat Indisipliner sukses disalin! Silakan paste langsung ke grup WhatsApp Wali Santri / Pengurus.");
+        });
+    }
+
+    // ==========================================
+    // MODUL TAB SETTING (KELOLA DATA MASTER INDUK)
+    // ==========================================
+    function renderPengaturanTab() {
+        let tbodyKeg = document.getElementById('preview-tabel-kegiatan');
+        if(tbodyKeg) {
+            tbodyKeg.innerHTML = "";
+            daftarKegiatan.forEach((k, idx) => {
+                tbodyKeg.innerHTML += `<tr>
+                    <td style="text-align:left; padding-left:5px;">${k}</td>
+                    <td><button class="btn-danger" style="padding:2px 5px; font-size:10px;" onclick="hapusKegiatanKlik(${idx})">Hapus</button></td>
+                </tr>`;
+            });
+        }
+
+        let tbodySantri = document.getElementById('preview-tabel-santri');
+        if(tbodySantri) {
+            tbodySantri.innerHTML = "";
+            daftarSantri.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
+                tbodySantri.innerHTML += `<tr>
+                    <td style="text-align:left; padding-left:5px;"><b>${s.nama}</b></td>
+                    <td>${s.domisili}</td>
+                    <td><button class="btn-danger" style="padding:2px 5px; font-size:10px;" onclick="hapusSantriIndukKlik(${s.id}, '${s.nama}')">Hapus</button></td>
+                </tr>`;
+            });
+        }
+    }
+
+    function tambahJenisKegiatanDinamisCloud() {
+        let baru = document.getElementById('input-kegiatan-baru').value.trim();
+        if(!baru) return alert("Ketik nama kegiatan terlebih dahulu!");
+        
+        daftarKegiatan.push(baru);
+        document.getElementById('input-kegiatan-baru').value = "";
+        simpanDataOfflineLokal();
+        initDropdownDanTabel();
+        alert("Kegiatan baru berhasil ditambahkan!");
+    }
+
+    function hapusKegiatanKlik(idx) {
+        if(confirm("Hapus jenis kegiatan ini?")) {
+            daftarKegiatan.splice(idx, 1);
+            simpanDataOfflineLokal();
+            initDropdownDanTabel();
+        }
+    }
+
+    function tambahSantriBaruMekanismeHybrid() {
+        let nm = document.getElementById('manual-nama').value.trim().toUpperCase();
+        let dom = document.getElementById('manual-domisili').value.trim().toUpperCase();
+        let kam = document.getElementById('manual-kamar').value.trim().toUpperCase();
+
+        if(!nm || !dom) return alert("Nama Lengkap dan Nomor Kamar wajib diisi!");
+
+        let nId = new Date().getTime(); 
+        daftarSantri.push({ id: nId, nama: nm, domisili: dom, kamar: kam });
+
+        document.getElementById('manual-nama').value = "";
+        document.getElementById('manual-domisili').value = "";
+        document.getElementById('manual-kamar').value = "";
+
+        simpanDataOfflineLokal();
+        initDropdownDanTabel();
+        alert("Santri baru berhasil dimasukkan!");
+    }
+
+    function hapusSantriIndukKlik(id, nama) {
+        if(confirm(`Apakah Anda yakin ingin menghapus data induk santri bernama ${nama} dari database?`)) {
+            daftarSantri = daftarSantri.filter(s => s.id !== id);
+            simpanDataOfflineLokal();
+            initDropdownDanTabel();
+        }
+    }
+
+    function resetServerCloudKeBawaanAwal() {
+        if(confirm("PERINGATAN! Perintah ini akan mengosongkan seluruh memori tabulasi dan mereset data server cloud ke setelan pabrik awal. Lanjutkan?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    // ==========================================
+    // LAYAR POP-UP MODAL PROFIL DETAIL KEDISIPLINAN
+    // ==========================================
+    function bukaModalDetailSantri(namaSantri) {
+        let s = daftarSantri.find(ds => ds.nama === namaSantri);
+        if(!s) return;
+
+        document.getElementById('detailNama').innerText = s.nama;
+        document.getElementById('detailKamar').innerText = `Kamar Kepala: ${s.kamar || '-'} (${s.domisili})`;
+
+        let d1 = document.getElementById('rekap-dari').value;
+        let d2 = document.getElementById('rekap-sampai').value;
+
+        let cA = 0, cT = 0, cK = 0, cI = 0;
+        let histAbsenHtml = "";
 
         for (let key in databaseAbsen) {
             let tglKey = key.split("_")[0];
+            let kegKey = key.split("_")[1];
+
             if (tglKey >= d1 && tglKey <= d2) {
-                let status = databaseAbsen[key][santri.id];
-                if (status && status !== 'H') {
-                    let tglFmt = tglKey.split("-").reverse().join("-");
-                    let ket = "";
-                    if (status === 'A') { countA++; ket = "ALPA"; }
-                    else if (status === 'T') { countT++; ket = "TELAT"; }
-                    else if (status === 'K') { countK++; ket = "KELUAR"; }
-                    else if (status === 'I' || status === 'S') { countIS++; ket = status==='I'?"IZIN":"SAKIT"; }
+                let logLunasIds = databaseAbsen[key].lunasSantriIds || [];
+                if(logLunasIds.includes(s.id)) continue; 
+
+                let st = databaseAbsen[key][s.id];
+                if(st && st !== 'H') {
+                    let label = "";
+                    if(st === 'A') { cA++; label = "ALPA"; }
+                    if(st === 'T') { cT++; label = "TELAT"; }
+                    if(st === 'K') { cK++; label = "KELUAR"; }
+                    if(st === 'I' || st === 'S') { cI++; label = st === 'I' ? "IZIN" : "SAKIT"; }
                     
-                    let rA = parseInt(document.getElementById('rule-alpa-mengaji').value) || 0;
-                    let rT = parseInt(document.getElementById('rule-telat-mengaji').value) || 0;
-                    let rK = parseInt(document.getElementById('rule-keluar-mengaji').value) || 0;
-                    let rS = parseInt(document.getElementById('rule-alpa-sholat').value) || 0;
-
-                    if (status === 'A') { totalLbr += rA; totalRakaat += rS; } 
-                    else if (status === 'T') { totalLbr += rT; } 
-                    else if (status === 'K') { totalLbr += rK; }
-
-                    htmlAbsen += `<div class="history-item"><span>${tglFmt}</span> <b>${ket}</b></div>`;
+                    let tglFmt = tglKey.split("-").reverse().join("-");
+                    histAbsenHtml += `<div class="history-item"><span>📅 ${tglFmt} - ${kegKey}</span><strong style="color:#d63031;">${label}</strong></div>`;
                 }
             }
         }
 
-        document.getElementById('statAlpa').innerText = countA;
-        document.getElementById('statTelat').innerText = countT;
-        document.getElementById('statKeluar').innerText = countK;
-        document.getElementById('statIzin').innerText = countIS;
-        document.getElementById('listRiwayatAbsen').innerHTML = htmlAbsen || "<div style='text-align:center;color:#999;'>Tidak ada catatan negatif.</div>";
+        document.getElementById('statAlpa').innerText = cA;
+        document.getElementById('statTelat').innerText = cT;
+        document.getElementById('statKeluar').innerText = cK;
+        document.getElementById('statIzin').innerText = cI;
+        document.getElementById('listRiwayatAbsen').innerHTML = histAbsenHtml || "<p style='color:#777; margin:5px 0;'>Bersih dari pelanggaran absen harian pekan ini.</p>";
 
-        let htmlKhusus = "";
-        databaseKhusus.forEach(p => {
-            if (p.nama === santri.nama && p.tanggal >= d1 && p.tanggal <= d2) {
-                totalLbr += (p.tipe === 'Juz' ? p.jumlah * 10 : p.jumlah);
-                htmlKhusus += `<div class="history-item"><span>${p.tanggal}</span> <b>${p.kategori}</b> <small>(+${p.jumlah} ${p.tipe})</small></div>`;
-            }
+        let histKhususHtml = "";
+        let totalLbrKhusus = 0;
+        let filteredKhusus = databaseKhusus.filter(pk => pk.nama === s.nama && pk.tanggal >= d1 && pk.tanggal <= d2 && pk.status !== "Selesai");
+        
+        filteredKhusus.forEach(pk => {
+            let konv = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
+            totalLbrKhusus += konv;
+            histKhususHtml += `<div class="history-item"><span>⚠️ <b>${pk.kategori}</b> (${pk.tanggal})</span><span>Sanksi: ${pk.jumlah} ${pk.tipe}</span></div>`;
         });
-        document.getElementById('listRiwayatKhusus').innerHTML = htmlKhusus || "<div style='text-align:center;color:#999;'>Bersih dari pelanggaran khusus.</div>";
+        document.getElementById('listRiwayatKhusus').innerHTML = histKhususHtml || "<p style='color:#777; margin:5px 0;'>Bersih dari pelanggaran kasus khusus pekan ini.</p>";
 
-        let juz = Math.floor(totalLbr / 10), lbr = totalLbr % 10;
-        let txtTakziran = (juz > 0 ? `${juz} Juz ` : "") + (lbr > 0 ? `${lbr} Lembar` : "");
-        if (txtTakziran === "") txtTakziran = "0 Lembar";
-        if (totalRakaat > 0) txtTakziran += ` + ${totalRakaat} Rakaat Sholat`;
+        let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value) || 0;
+        let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value) || 0;
+        let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value) || 0;
+        let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value) || 0;
+        let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value) || 0;
 
-        document.getElementById('totalTakziranText').innerText = txtTakziran;
+        let totalBebanLembar = (cA * rA_M) + (cT * rT_M) + (cK * rK_M) + (cI * rP_M) + totalLbrKhusus;
+        let totalBebanSholat = cA * rA_S;
+
+        let hitJuz = Math.floor(totalBebanLembar / 10);
+        let hitSis = totalBebanLembar % 10;
+        
+        let teksHasilMengaji = "";
+        if(hitJuz > 0 && hitSis > 0) teksHasilMengaji = `${hitJuz} Juz & ${hitSis} Lembar Mengaji`;
+        else if(hitJuz > 0) teksHasilMengaji = `${hitJuz} Juz Mengaji`;
+        else if(hitSis > 0) teksHasilMengaji = `${hitSis} Lembar Mengaji`;
+        else teksHasilMengaji = "0 Lembar";
+
+        let teksHasilSholat = totalBebanSholat > 0 ? ` & ${totalBebanSholat} Rakaat Sholat Sunnah` : "";
+        document.getElementById('totalTakziranText').innerHTML = teksHasilMengaji + teksHasilSholat;
+
         document.getElementById('modalDetailSantri').style.display = "block";
-    }
-
-    function cetakSuratPeringatanPDF() {
-        if (!santriTerpilihDetail) return;
-        const s = santriTerpilihDetail;
-        const alpa = document.getElementById('statAlpa').innerText;
-        const telat = document.getElementById('statTelat').innerText;
-        const keluar = document.getElementById('statKeluar').innerText;
-        const takziran = document.getElementById('totalTakziranText').innerText;
-        const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        const win = window.open('', '_blank');
-        win.document.write(`
-        <html><head><title>SP - ${s.nama}</title><style>@page { size: A5; margin: 15mm; } body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; color: #000; } .kop { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; } .kop h2 { margin: 0; font-size: 14pt; text-transform: uppercase; } .kop p { margin: 2px 0; font-size: 9pt; } .judul { text-align: center; text-decoration: underline; font-weight: bold; font-size: 12pt; margin: 15px 0; } .box-takziran { border: 1px solid #000; padding: 10px; margin: 15px 0; background-color: #f9f9f9; } .footer { margin-top: 30px; text-align: right; }</style></head>
-        <body>
-            <div class="kop"><h2>Pondok Pesantren Nurul Islam Al-Munawwir</h2><p>Sampang, Madura, Jawa Timur</p></div>
-            <div class="judul">SURAT PERINGATAN & TAKZIRAN</div>
-            <p>Tanggal: ${today}</p>
-            <table style="width:100%; margin-bottom:15px;">
-                <tr><td width="120">Nama Santri</td><td>: <b>${s.nama}</b></td></tr>
-                <tr><td>Domisili</td><td>: ${s.domisili} (Kepala Kamar: ${s.kamar})</td></tr>
-            </table>
-            <p>Berdasarkan rekapitulasi kedisiplinan, santri tercatat melanggar: Alpa ${alpa}x, Telat ${telat}x, Keluar ${keluar}x. Dikenakan takziran wajib:</p>
-            <div class="box-takziran"><center><b>RINCIAN TAKZIRAN</b></center><p style="text-align:center; font-size:12pt; margin:10px 0; color:#d63031;"><b>${takziran}</b></p></div>
-            <p>Harap segera diselesaikan dengan penuh tanggung jawab.</p>
-            <div class="footer"><p>Sampang, ${today}</p><p>Pengurus Bidang Keamanan</p><br><br><br><p><b>( ___________________ )</b></p></div>
-            <script>window.onload = function() { window.print(); window.close(); }<\/script>
-        </body></html>`);
-        win.document.close();
     }
 
     function tutupModalDetail() {
         document.getElementById('modalDetailSantri').style.display = "none";
     }
-
-    function pilihModelSurat(tipe) {
-    let d1 = document.getElementById('rekap-dari').value.split("-").reverse().join("-");
-    let d2 = document.getElementById('rekap-sampai').value.split("-").reverse().join("-");
-    
-    let rA_M = parseInt(document.getElementById('rule-alpa-mengaji').value)||0;
-    let rT_M = parseInt(document.getElementById('rule-telat-mengaji').value)||0;
-    let rK_M = parseInt(document.getElementById('rule-keluar-mengaji').value)||0;
-    let rP_M = parseInt(document.getElementById('rule-pulang-mengaji').value)||0;
-    let rA_S = parseInt(document.getElementById('rule-alpa-sholat').value)||0;
-
-    let head = `SURAT KETERANGAN INDISIPLINER SANTRI\n\n`;
-    let isi = `Assalamu’alaikum Warahmatullahi Wabarakatuh,\n\n` +
-        `Kami yang bertanda tangan di bawah ini, atas nama Pengurus Pondok Pesantren Nurul Islam Al-Munawwir, menyampaikan maklumat terkait kedisiplinan santri.\n\n` +
-        `Sebagaimana maqolah Sayyidina Ali bin Abi Thalib karromallahu wajhah:\n\n` +
-        `حَقٌّ بغيرِ نظامٍ يَغلِبُهُ باطِلٌ بنِظامٍ\n\n` +
-        `Tanpa sistem yang mapan, kebenaran bisa dikalahkan oleh kebatilan. Maka kami sebagai pengurus, demi menjaga ketertiban dan membiasakan kedisiplinan santri di lingkungan pesantren, menetapkan sanksi edukatif bagi nama-nama berikut. Harapannya, hal ini dapat menjadi bahan evaluasi agar santri yang bersangkutan bisa lebih disiplin di masa yang akan datang.\n\n` +
-        `Bagi nama-nama santri yang tercantum di bawah ini, mohon segera mendatangi depan dhalem sesudah kegiatan sholat Isyak untuk melaksanakan takziran mengaji:\n\n` +
-        `REKAP PELANGGARAN PEKAN INI (Periode ${d1} s/d ${d2} M):\n` +
-        `(Ketentuan Umum: Alpa = ${rA_M} Lembar Mengaji & ${rA_S} Rakaat Sholat, Telat = ${rT_M} Lembar)\n\n`;
-
-    let tglDariRaw = document.getElementById('rekap-dari').value;
-    let tglSampaiRaw = document.getElementById('rekap-sampai').value;
-    
-    // FILTER: Hanya ambil pelanggaran khusus yang BELUM "Selesai"
-    let filteredKhusus = databaseKhusus.filter(pk => pk.tanggal >= tglDariRaw && pk.tanggal <= tglSampaiRaw && pk.status !== "Selesai");
-    
-    let gabunganData = {};
-
-    // FILTER: Hanya ambil pelanggar absen harian yang BELUM "Selesai"
-    globalPelanggarAbsen.forEach(p => {
-        if (p.status !== "Selesai" && (p.A > 0 || p.T > 0 || p.K > 0 || p.P > 0)) {
-            if (!gabunganData[p.nama]) {
-                gabunganData[p.nama] = { nama: p.nama, alpa: p.A, telat: p.T, keluar: p.K, pulang: p.P, khusus: [] };
-            }
-        }
-    });
-
-    filteredKhusus.forEach(pk => {
-        if (!gabunganData[pk.nama]) {
-            gabunganData[pk.nama] = { nama: pk.nama, alpa: 0, telat: 0, keluar: 0, pulang: 0, khusus: [] };
-        }
-        gabunganData[pk.nama].khusus.push(pk);
-    });
-
-    let teksDaftarSantri = "";
-    let nomor = 1;
-
-    for (let nama in gabunganData) {
-        let s = gabunganData[nama];
-        let rincianTeks = [];
-        
-        let totalLembarSemua = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
-        let totalRakaatSholat = (s.alpa * rA_S);
-        let listTugasFisik = [];
-
-        if (s.alpa > 0) rincianTeks.push(`Alpa ${s.alpa} Kali`);
-        if (s.telat > 0) rincianTeks.push(`Telat ${s.telat} Kali`);
-
-        s.khusus.forEach(pk => {
-            let teksKhusus = `${pk.kategori}`;
-            if(pk.jumlah > 0) {
-                teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
-                let konversiLembar = (pk.tipe === 'Juz') ? parseInt(pk.jumlah) * 10 : parseInt(pk.jumlah);
-                totalLembarSemua += konversiLembar;
-            }
-            rincianTeks.push(teksKhusus);
-            
-            if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
-                listTugasFisik.push(pk.fisik);
-            }
-        });
-
-        teksDaftarSantri += `${nomor}. ${nama}: ${rincianTeks.join(" + ")}\n`;
-
-        if (totalLembarSemua > 0) {
-            let hitungJuz = Math.floor(totalLembarSemua / 10);
-            let hitungSisaLembar = totalLembarSemua % 10;
-            let teksTotalTakziran = (hitungJuz > 0 ? `${hitungJuz} Juz ` : "") + (hitungSisaLembar > 0 ? `& ${hitungSisaLembar} Lembar` : "");
-            if(hitungJuz === 0 && hitungSisaLembar > 0) teksTotalTakziran = `${hitungSisaLembar} Lembar`;
-            teksDaftarSantri += `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
-        }
-        
-        if (totalRakaatSholat > 0) {
-            teksDaftarSantri += `   Total Takziran Sholat: ${totalRakaatSholat} Rakaat\n`;
-        }
-        
-        if (listTugasFisik.length > 0) {
-            teksDaftarSantri += `   (Kerja Fisik: ${listTugasFisik.join(" & ")})\n`;
-        }
-        
-        teksDaftarSantri += `\n`;
-        nomor++;
-    }
-
-    if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
-
-    let teksDetailFisik = "";
-    if (filteredKhusus.length > 0) {
-        teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS & TAKZIRAN TAMBAHAN):\n\n`;
-        let grupKategori = {};
-        filteredKhusus.forEach(pk => {
-            if (!grupKategori[pk.kategori]) {
-                grupKategori[pk.kategori] = { namaSantri: [], fisik: pk.fisik, jumlahBaca: pk.jumlah, tipeBaca: pk.tipe };
-            }
-            if (!grupKategori[pk.kategori].namaSantri.includes(pk.nama)) {
-                grupKategori[pk.kategori].namaSantri.push(pk.nama);
-            }
-        });
-
-        let noKat = 1;
-        for (let kat in grupKategori) {
-            let g = grupKategori[kat];
-            let teksBacaanManual = g.jumlahBaca > 0 ? `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}` : "-";
-            teksDetailFisik += `${noKat}. Kategori Pelanggaran: ${kat}\n` +
-                               `   Nama Santri: ${g.namaSantri.join(", ")}\n` +
-                               `   Takziran Membaca: ${teksBacaanManual}\n` +
-                               `   Takziran Fisik: ${g.fisik || "-"}\n\n`;
-            noKat++;
-        }
-    }
-
-    let closing = `Besar harapan kami, maklumat ini menjadi cermin bagi santri lainnya untuk tetap istiqomah dalam kedisiplinan. Jangan sampai pelanggaran ini menjadi contoh yang diikuti, namun jadikanlah ia pelajaran berharga agar kita tidak terjerumus pada kelalaian yang sama.\n\n` +
-        `Wassalamu’alaikum Warahmatullahi Wabarakatuh.\n\n` +
-        `Pengurus Pondok Pesantren Nurul Islam Al-Munawwir`;
-
-    teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
-    document.getElementById('konten-surat').innerText = teksSuratTerpilih;
-    }
-    function salinSuratKeClipboard() {
-        navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
-    }
-function centangSelesaiTakziran(namaSantri, tipePelanggaran, infoUnik) {
-    let pesan = `Apakah santri atas nama ${namaSantri} benar-benar sudah menyelesaikan takziran ${tipePelanggaran === 'absen' ? 'Absensi' : 'Pelanggaran Khusus'}-nya?`;
-    
-    if (confirm(pesan)) {
-        if (tipePelanggaran === 'absen') {
-            globalPelanggarAbsen.forEach(p => {
-                if (p.nama === namaSantri) {
-                    p.status = "Selesai";
-                }
-            });
-        } else if (tipePelanggaran === 'khusus') {
-            databaseKhusus.forEach(pk => {
-                if (pk.nama === namaSantri && pk.kategori === infoUnik) {
-                    pk.status = "Selesai";
-                }
-            });
-        }
-
-        if (typeof simpanDataLokal === "function") {
-            simpanDataLokal();
-        } else if (typeof simpanKeLocalStorage === "function") {
-            simpanKeLocalStorage();
-        }
-
-        pilihModelSurat();
-        if (typeof tampilkanTabelRekap === "function") tampilkanTabelRekap();
-        if (typeof renderTabel === "function") renderTabel();
-
-        alert(`Alhamdulillah, takziran ${namaSantri} berhasil ditandai Selesai!`);
-    }
-}
-    
 </script>
 </body>
 </html>
