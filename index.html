@@ -1004,8 +1004,6 @@
     });
 
     let teksDaftarSantri = "";
-    let listMerokok = [];
-    let listKeluarBatas = [];
     let nomor = 1;
 
     for (let nama in gabunganData) {
@@ -1019,14 +1017,17 @@
         if (s.telat > 0) rincianTeks.push(`Telat ${s.telat} Kali`);
 
         s.khusus.forEach(pk => {
-            rincianTeks.push(`${pk.kategori}`);
+            // Teks dinamis sesuai input manual pengurus di form khusus
+            let teksKhusus = `${pk.kategori}`;
+            if(pk.jumlah > 0) {
+                teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
+            }
+            rincianTeks.push(teksKhusus);
             
-            if (pk.fisik && !listTugasFisik.includes(pk.fisik)) {
+            // Menggabungkan tugas fisik jika diinput manual
+            if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
                 listTugasFisik.push(pk.fisik);
             }
-
-            if (pk.kategori.includes("Merokok") && !listMerokok.includes(nama)) listMerokok.push(nama);
-            if (pk.kategori.includes("Keluar Batas") && !listKeluarBatas.includes(nama)) listKeluarBatas.push(nama);
         });
 
         let hitungJuz = Math.floor(totalLembarSemua / 10);
@@ -1054,24 +1055,28 @@
 
     if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
 
-    let teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS FISIK):\n\n`;
+    // 2. BAGIAN BAWAH SEKARANG IKUT DINAMIS BERDASARKAN INPUT MANUAL
+    let teksDetailFisik = "";
+    if (filteredKhusus.length > 0) {
+        teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS FISIK):\n\n`;
+        
+        // Kelompokkan data berdasarkan jenis kategori pelanggaran yang diketik pengurus
+        let grupKategori = {};
+        filteredKhusus.forEach(pk => {
+            if (!grupKategori[pk.kategori]) grupKategori[pk.kategori] = { namaSantri: [], fisik: pk.fisik };
+            if (!grupKategori[pk.kategori].namaSantri.includes(pk.nama)) {
+                grupKategori[pk.kategori].namaSantri.push(pk.nama);
+            }
+        });
 
-    if (listMerokok.length > 0) {
-        teksDetailFisik += `1. Kategori Pelanggaran Berat (Merokok)\n` +
-                           `   Nama Santri: ${listMerokok.join(", ")}\n` +
-                           `   Takziran Fisik: Merenovasi Gudang di kamar Langgher bagian timur dengan memindahkan semua barang tak terpakai ke dhalem, membersihkan area, merenovasi kamarnya, memindahkan pintu utara kembali ke pintu asal bagian timur, mengecat sampai rapi, memasang lampu penerang, permadani, kipas angin, serta menambal atap yang bocor.\n` +
-                           `   Batas Waktu: Jangka waktu 1 pekan. Jika belum selesai, wajib menambah bacaan Al-Quran 3 lembar dan tetap harus menyelesaikan renovasi tersebut (kamar akan difungsikan sebagai Kantor BP2SDI).\n\n`;
-    }
-
-    if (listKeluarBatas.length > 0) {
-        teksDetailFisik += `2. Pelanggaran Keluar Batas ke Rumah Bhik Thima Malam Hari Tanpa Izin\n` +
-                           `   Nama Santri: ${listKeluarBatas.join(", ")}\n` +
-                           `   Takziran Fisik: Wajib mencabut rumput di area depan masjid, halaman masjid bagian utara, serta bagian selatan depan bawah gedung tahfidz sampai bersih.\n` +
-                           `   Batas Waktu: Jangka waktu 1 hari (besok saja setelah kegiatan Subuh). Jika masih ada satu rumput pun yang tersisa, akan dikenakan penambahan takziran membaca Al-Quran sebanyak 4 Lembar.\n\n`;
-    }
-
-    if (listMerokok.length === 0 && listKeluarBatas.length === 0) {
-        teksDetailFisik = "";
+        let noKat = 1;
+        for (let kat in grupKategori) {
+            let g = grupKategori[kat];
+            teksDetailFisik += `${noKat}. Kategori Pelanggaran: ${kat}\n` +
+                               `   Nama Santri: ${g.namaSantri.join(", ")}\n` +
+                               `   Takziran Fisik: ${g.fisik || "-"}\n\n`;
+            noKat++;
+        }
     }
 
     let closing = `Besar harapan kami, maklumat ini menjadi cermin bagi santri lainnya untuk tetap istiqomah dalam kedisiplinan. Jangan sampai pelanggaran ini menjadi contoh yang diikuti, namun jadikanlah ia pelajaran berharga agar kita tidak terjerumus pada kelalaian yang sama.\n\n` +
@@ -1080,7 +1085,7 @@
 
     teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
     document.getElementById('konten-surat').innerText = teksSuratTerpilih;
-         }
+    }
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
     }
