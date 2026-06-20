@@ -1010,6 +1010,7 @@
         let s = gabunganData[nama];
         let rincianTeks = [];
         
+        // Lembar atas murni dari akumulasi absensi umum (Alpa & Telat)
         let totalLembarSemua = (s.alpa * rA_M) + (s.telat * rT_M) + (s.keluar * rK_M) + (s.pulang * rP_M);
         let listTugasFisik = [];
 
@@ -1017,16 +1018,20 @@
         if (s.telat > 0) rincianTeks.push(`Telat ${s.telat} Kali`);
 
         s.khusus.forEach(pk => {
-            // Teks dinamis sesuai input manual pengurus di form khusus
             let teksKhusus = `${pk.kategori}`;
             if(pk.jumlah > 0) {
                 teksKhusus += ` (${pk.jumlah} ${pk.tipe})`;
             }
             rincianTeks.push(teksKhusus);
             
-            // Menggabungkan tugas fisik jika diinput manual
-            if (pk.fisik && pk.fisik.trim() !== "" && !listTugasFisik.includes(pk.fisik)) {
-                listTugasFisik.push(pk.fisik);
+            // Satukan informasi takziran khusus untuk ditaruh di bawah nama santri (jika ada)
+            let komponenSanksi = [];
+            if (pk.jumlah > 0) komponenSanksi.push(`Bacaan Tambahan: ${pk.jumlah} ${pk.tipe}`);
+            if (pk.fisik && pk.fisik.trim() !== "") komponenSanksi.push(`Fisik: ${pk.fisik}`);
+            
+            let gabunganSanksiTeks = komponenSanksi.join(" & ");
+            if (gabunganSanksiTeks !== "" && !listTugasFisik.includes(gabunganSanksiTeks)) {
+                listTugasFisik.push(gabunganSanksiTeks);
             }
         });
 
@@ -1046,7 +1051,7 @@
                             `   Total Takziran Mengaji: ${teksTotalTakziran}\n`;
         
         if (listTugasFisik.length > 0) {
-            teksDaftarSantri += `   (Kerja Fisik: ${listTugasFisik.join(" & ")})\n`;
+            teksDaftarSantri += `   (Sanksi Khusus: ${listTugasFisik.join(" / ")})\n`;
         }
         
         teksDaftarSantri += `\n`;
@@ -1055,15 +1060,21 @@
 
     if (teksDaftarSantri === "") teksDaftarSantri = "(Tidak ada catatan pelanggaran pada periode ini)\n\n";
 
-    // 2. BAGIAN BAWAH SEKARANG IKUT DINAMIS BERDASARKAN INPUT MANUAL
+    // 2. BAGIAN DETAIL BAWAH SEKARANG MENGGABUNGKAN TAKZIRAN MEMBACA DAN FISIK SECARA DINAMIS
     let teksDetailFisik = "";
     if (filteredKhusus.length > 0) {
-        teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS FISIK):\n\n`;
+        teksDetailFisik = `PELANGGARAN KHUSUS (DETAIL TUGAS & TAKZIRAN TAMBAHAN):\n\n`;
         
-        // Kelompokkan data berdasarkan jenis kategori pelanggaran yang diketik pengurus
         let grupKategori = {};
         filteredKhusus.forEach(pk => {
-            if (!grupKategori[pk.kategori]) grupKategori[pk.kategori] = { namaSantri: [], fisik: pk.fisik };
+            if (!grupKategori[pk.kategori]) {
+                grupKategori[pk.kategori] = { 
+                    namaSantri: [], 
+                    fisik: pk.fisik,
+                    jumlahBaca: pk.jumlah,
+                    tipeBaca: pk.tipe
+                };
+            }
             if (!grupKategori[pk.kategori].namaSantri.includes(pk.nama)) {
                 grupKategori[pk.kategori].namaSantri.push(pk.nama);
             }
@@ -1072,8 +1083,16 @@
         let noKat = 1;
         for (let kat in grupKategori) {
             let g = grupKategori[kat];
+            
+            // Menyusun teks takziran membaca tambahan (jika diinput manual oleh pengurus)
+            let teksBacaanManual = "-";
+            if (g.jumlahBaca > 0) {
+                teksBacaanManual = `Membaca Al-Quran sebanyak ${g.jumlahBaca} ${g.tipeBaca}`;
+            }
+
             teksDetailFisik += `${noKat}. Kategori Pelanggaran: ${kat}\n` +
                                `   Nama Santri: ${g.namaSantri.join(", ")}\n` +
+                               `   Takziran Membaca: ${teksBacaanManual}\n` +
                                `   Takziran Fisik: ${g.fisik || "-"}\n\n`;
             noKat++;
         }
@@ -1085,7 +1104,7 @@
 
     teksSuratTerpilih = head + isi + teksDaftarSantri + teksDetailFisik + closing;
     document.getElementById('konten-surat').innerText = teksSuratTerpilih;
-    }
+        }
     function salinSuratKeClipboard() {
         navigator.clipboard.writeText(document.getElementById("konten-surat").innerText).then(() => alert("✅ Disalin!"));
     }
