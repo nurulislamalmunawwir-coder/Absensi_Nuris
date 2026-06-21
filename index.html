@@ -529,27 +529,51 @@
     // SINKRONISASI AMBIL DATA CLOUD
     // ==========================================
     function tarikDataDariCloud(alertSukses = false) {
-        showLoading(true);
-        fetch(CLOUD_SERVER_URL)
-        .then(res => res.json())
-        .then(data => {
-            if(data.daftarSantri) daftarSantri = data.daftarSantri;
-            if(data.daftarKegiatan) daftarKegiatan = data.daftarKegiatan;
-            if(data.databaseAbsen) databaseAbsen = data.databaseAbsen;
-            if(data.databaseKhusus) databaseKhusus = data.databaseKhusus;
+            showLoading(true);
+    fetch(CLOUD_SERVER_URL)
+    .then(res => res.json())
+    .then(data => {
+        // 1. Gabungkan daftar santri dan kegiatan dari server
+        if(data.daftarSantri) Object.assign(daftarSantri, data.daftarSantri);
+        if(data.daftarKegiatan) Object.assign(daftarKegiatan, data.daftarKegiatan);
 
-            simpanDataOfflineLokal();
-            refreshSemuaTampilanLayar();
-            showLoading(false);
-            if(alertSukses) alert("✅ Sinkronisasi Berhasil! Data HP sama dengan Cloud server pusat.");
-        })
-        .catch(err => {
-            showLoading(false);
-            console.log("Mode Offline aktif.");
-            if(alertSukses) alert("⚠️ Gagal terhubung ke Cloud. Sinyal bermasalah.");
-        });
-    }
+        // 2. GABUNGKAN DATA ABSENSI (Agar data offline di HP tidak tertimpa data cloud)
+        if(data.databaseAbsen) {
+            // Kita gabungkan per tanggal dan per kegiatan agar hasil rekapan offline aman
+            for (let tanggal in data.databaseAbsen) {
+                if (!databaseAbsen[tanggal]) {
+                    databaseAbsen[tanggal] = {};
+                }
+                Object.assign(databaseAbsen[tanggal], data.databaseAbsen[tanggal]);
+            }
+        }
 
+        // 3. GABUNGKAN DATA KHUSUS / PELANGGARAN SANTRI
+        if(data.databaseKhusus) {
+            for (let idPelanggaran in data.databaseKhusus) {
+                databaseKhusus[idPelanggaran] = data.databaseKhusus[idPelanggaran];
+            }
+        }
+
+        // 4. Simpan hasil penggabungan ke lokal HP terlebih dahulu
+        simpanDataOfflineLokal();
+        
+        // 5. Perbarui tampilan layar agar rekapan terbaru (gabungan offline + cloud) langsung muncul
+        refreshSemuaTampilanLayar();
+        showLoading(false);
+        
+        if(alertSukses) {
+            alert("✅ Sinkronisasi Berhasil! Data offline di HP dan Cloud server pusat telah digabungkan.");
+        }
+    })
+    .catch(err => {
+        showLoading(false);
+        console.error(err);
+        console.log("Mode Offline aktif.");
+        if(alertSukses) alert("⚠️ Gagal terhubung ke Cloud. Sinyal bermasalah.");
+    });
+}
+    
     function renderTabelAbsen() {
         let container = document.getElementById('container-kartu-absen');
         container.innerHTML = "";
